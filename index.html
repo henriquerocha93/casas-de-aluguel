@@ -15,6 +15,7 @@
 </head>
 <body>
     <div class="app-container">
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
@@ -43,6 +44,9 @@
         <main class="main-content">
             <header>
                 <div class="header-left">
+                    <button class="btn-icon mobile-menu-btn" id="btn-toggle-sidebar" style="display: none;">
+                        <i class='bx bx-menu'></i>
+                    </button>
                     <h1 id="page-title">Dashboard Financeiro</h1>
                     <p class="date-display" id="current-date">Carregando data...</p>
                 </div>

@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const remember = document.getElementById('remember-me').checked;
 
         const users = JSON.parse(localStorage.getItem('hrc_users'));
-        const user = users.find(u => u.username === userVal && u.password === passVal);
+        const user = users.find(u => u.username.toLowerCase() === userVal.toLowerCase() && u.password === passVal);
 
         if (user) {
             const token = btoa(JSON.stringify({ 

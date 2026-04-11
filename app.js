@@ -478,6 +478,29 @@ function setupEventListeners() {
     document.getElementById('energy-kwh').addEventListener('input', calcUpdateEnergy);
     document.getElementById('energy-price').addEventListener('input', calcUpdateEnergy);
     document.getElementById('energy-value').addEventListener('input', updateFinalTotal);
+
+    // Toggle Sidebar Mobile
+    const btnToggle = document.getElementById('btn-toggle-sidebar');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (btnToggle && sidebar && overlay) {
+        const toggleSidebar = () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        };
+
+        btnToggle.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Fechar ao clicar em links (importante no mobile)
+        document.querySelectorAll('.nav-links li a').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        });
+    }
 }
 
 function handleHouseSubmit(e) {
