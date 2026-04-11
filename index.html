@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRC Imóveis - Gestão de Aluguéis</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <meta name="description" content="CRM de Controle Financeiro de Casas de Aluguel">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="hrc_logo_new.png" alt="HRC Imóveis Logo" style="width: 100%; height: auto; max-height: 80px; object-fit: contain;">
+            </div>
+            <ul class="nav-links">
+                <li class="active"><a href="#" id="menu-dashboard-link"><i class='bx bx-grid-alt'></i> Dashboard</a></li>
+                <li><a href="#" id="menu-houses-link"><i class='bx bx-home'></i> Imóveis</a></li>
+                <li><a href="#" id="menu-luz-link"><i class='bx bx-bolt'></i> Luz</a></li>
+                <li><a href="#" id="menu-users-link"><i class='bx bx-group'></i> Usuários</a></li>
+            </ul>
+            <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid var(--border); margin-top: auto;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <i class='bx bxs-user-circle' style="font-size: 32px; color: var(--secondary);"></i>
+                    <div style="overflow: hidden;">
+                        <p id="logged-user-name" style="font-size: 13px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">Administrador</p>
+                    </div>
+                </div>
+                <button id="btn-logout" class="btn btn-icon" style="color: var(--danger); font-size: 14px; display: flex; align-items: center; gap: 8px; padding: 0;">
+                    <i class='bx bx-log-out'></i> Sair do Sistema
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="header-left">
+                    <h1 id="page-title">Dashboard Financeiro</h1>
+                    <p class="date-display" id="current-date">Carregando data...</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" id="btn-new-house">
+                        <i class='bx bx-plus'></i> Novo Imóvel
+                    </button>
+                </div>
+            </header>
+
+            <section class="dashboard-cards" id="dashboard-section">
+                <div class="card card-receber">
+                    <div class="card-icon"><i class='bx bx-dollar-circle'></i></div>
+                    <div class="card-info">
+                        <h3>A Receber (Mês)</h3>
+                        <p class="card-value" id="val-receber">R$ 0,00</p>
+                    </div>
+                </div>
+                <div class="card card-recebido">
+                    <div class="card-icon"><i class='bx bx-check-shield'></i></div>
+                    <div class="card-info">
+                        <h3>Já Recebido</h3>
+                        <p class="card-value" id="val-recebido">R$ 0,00</p>
+                    </div>
+                </div>
+                <div class="card card-atraso">
+                    <div class="card-icon"><i class='bx bx-error-circle'></i></div>
+                    <div class="card-info">
+                        <h3>Em Atraso</h3>
+                        <p class="card-value" id="val-atraso">R$ 0,00</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Grafico e Lista de Atrasos -->
+            <section class="dashboard-grid" id="chart-section">
+                <div class="chart-container box-panel">
+                    <h2>Entradas Mensais</h2>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="late-list-container box-panel">
+                    <h2>Próximos Vencimentos & Atrasos</h2>
+                    <ul class="late-list" id="alerts-list">
+                        <!-- Populated via JS -->
+                    </ul>
+                </div>
+            </section>
+
+            <section class="table-section box-panel">
+                <div class="table-header">
+                    <h2>Seus Imóveis</h2>
+                    <div class="filters">
+                        <div class="search-box">
+                            <i class='bx bx-search'></i>
+                            <input type="text" id="search-input" placeholder="Buscar casa ou inquilino...">
+                        </div>
+                        <select id="status-filter">
+                            <option value="all">Todos os Status</option>
+                            <option value="Pago">Pago</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Atrasado">Atrasado</option>
+                        </select>
+                        <select id="month-filter">
+                            <!-- Populated via JS current year months -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="houses-table">
+                        <thead>
+                            <tr>
+                                <th>Imóvel</th>
+                                <th>Inquilino / Tel</th>
+                                <th>Vencimento</th>
+                                <th>Aluguel + Energia</th>
+                                <th>Total (c/ multas)</th>
+                                <th>Status</th>
+                                <th>Whats</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="houses-tbody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Seção de Usuários (Escondida por padrão) -->
+            <section id="users-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Gestão de Acessos</h2>
+                    <button class="btn btn-primary" onclick="openUserModal()">
+                        <i class='bx bx-plus-circle'></i> Novo Usuário
+                    </button>
+                </div>
+                <div class="table-container box-panel">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome Completo</th>
+                                <th>Usuário de Login</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <!-- Injetado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Seção de Luz (Escondida por padrão) -->
+            <section class="luz-view-section box-panel" id="luz-section" style="display:none;">
+                <div class="table-header">
+                    <h2>Controle de Energia por Casa</h2>
+                    <div class="filters">
+                        <select id="luz-month-filter">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Casa</th>
+                                <th>Inquilino</th>
+                                <th>Consumo (kWh)</th>
+                                <th>Valor Luz (R$)</th>
+                                <th>Status Pagamento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="luz-tbody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modal-house">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-house-title">Cadastrar Imóvel</h2>
+                <button class="close-btn" id="close-modal-house"><i class='bx bx-x'></i></button>
+            </div>
+            <form id="form-house" class="modal-form">
+                <input type="hidden" id="house-id">
+                <div class="form-group">
+                    <label>Número/ID da Casa</label>
+                    <input type="text" id="house-number" required placeholder="Ex: Casa 01">
+                </div>
+                <div class="form-group">
+                    <label>Nome do Inquilino</label>
+                    <input type="text" id="tenant-name" required placeholder="Ex: João da Silva">
+                </div>
+                <div class="form-group">
+                    <label>Telefone / WhatsApp</label>
+                    <input type="text" id="tenant-phone" required placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label>Vencimento (Dia)</label>
+                        <input type="number" id="due-day" min="1" max="31" required placeholder="Ex: 5">
+                    </div>
+                    <div class="form-group">
+                        <label>Início do Contrato</label>
+                        <input type="date" id="start-date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Valor do Aluguel (R$)</label>
+                    <input type="number" id="rent-value" step="0.01" min="0" required placeholder="Ex: 1500.00">
+                </div>
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label>Multa p/ Atraso (%)</label>
+                        <input type="number" id="penalty-pct" step="0.01" min="0" value="2.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Juros Diários (%)</label>
+                        <input type="number" id="interest-pct" step="0.01" min="0" value="0.33">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Salvar Imóvel</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-payment">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Registrar Pagamento / Energia</h2>
+                <button class="close-btn" id="close-modal-payment"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body" id="payment-details">
+                <p><strong>Imóvel:</strong> <span id="pay-house-number"></span></p>
+                <p><strong>Mês Referência:</strong> <span id="pay-month-name"></span></p>
+                <hr>
+                <div class="financial-summary">
+                    <div class="fin-row"><span>Aluguel Base:</span> <span id="pay-base">R$ 0,00</span></div>
+                    <div class="fin-row alert-text" id="pay-fees-row" style="display:none;"><span>Multa + Juros:</span> <span id="pay-fees">R$ 0,00</span></div>
+                </div>
+                
+                <form id="form-payment" class="modal-form" style="margin-top: 15px;">
+                    <input type="hidden" id="pay-house-id">
+                    <input type="hidden" id="pay-month">
+                    
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label>Consumo (kWh)</label>
+                            <input type="number" id="energy-kwh" step="0.1" min="0" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Preço kWh (R$)</label>
+                            <input type="number" id="energy-price" step="0.01" min="0" value="0.95">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor da Luz (R$)</label>
+                        <input type="number" id="energy-value" step="0.01" min="0" placeholder="0.00">
+                        <small>Pode ser calculado ou digitado direto</small>
+                    </div>
+                    
+                    <div class="fin-row total-row"><span>Total a Pagar:</span> <strong id="pay-total-final">R$ 0,00</strong></div>
+
+                    <button type="submit" class="btn btn-success w-100">Confirmar Pagamento Realizado</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-energy">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Lançar Consumo de Energia</h2>
+                <button class="close-btn" id="close-modal-energy"><i class='bx bx-x'></i></button>
+            </div>
+            <form id="form-energy-modal" class="modal-form">
+                <input type="hidden" id="energy-house-id">
+                <input type="hidden" id="energy-month">
+                <p><strong>Imóvel:</strong> <span id="energy-house-number-display"></span></p>
+                <div class="form-group-row" style="margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Consumo (kWh)</label>
+                        <input type="number" id="energy-modal-kwh" step="0.1" min="0" required placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Preço kWh (R$)</label>
+                        <input type="number" id="energy-modal-price" step="0.01" min="0" value="0.95" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Valor Total da Luz (R$)</label>
+                    <input type="number" id="energy-modal-total-value" step="0.01" min="0" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Atualizar Valor da Luz</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-share">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Enviar Cobrança</h2>
+                <button class="close-btn" id="close-modal-share"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="share-info">
+                    <p><strong>Para:</strong> <span id="share-tenant-name"></span></p>
+                    <p><strong>Mês:</strong> <span id="share-month-label"></span></p>
+                </div>
+                
+                <div class="qr-container" style="text-align: center; margin: 20px 0; background: white; padding: 20px; border-radius: 12px;">
+                    <img id="pix-qrcode" src="" alt="QR Code PIX" style="max-width: 200px; display: inline-block;">
+                    <p style="color: #333; font-size: 12px; margin-top: 10px; font-weight: 600;">Escaneie com o app do Banco</p>
+                </div>
+
+                <div class="pix-copy-box" style="background: var(--bg-main); padding: 15px; border-radius: 8px; border: 1px dashed var(--border);">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 8px;">PIX Copia e Cola:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="pix-payload-input" readonly style="flex: 1; background: none; border: none; color: var(--text-main); font-size: 11px;">
+                        <button class="btn-icon" id="btn-copy-pix" title="Copiar"><i class='bx bx-copy'></i></button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button id="btn-generate-pdf" class="btn" style="background-color: var(--primary); color: white;">
+                        <i class='bx bx-file-blank'></i> Gerar PDF
+                    </button>
+                    <button id="btn-whatsapp-confirm" class="btn" style="background-color: #25D366; color: white;">
+                        <i class='bx bxl-whatsapp'></i> WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Invisível para o PDF da Fatura -->
+    <div id="invoice-pdf-template" style="display: none; position: absolute; left: -9999px;">
+        <div style="width: 210mm; min-height: 297mm; padding: 20mm; background: white; color: black; font-family: 'Inter', sans-serif; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <h1 style="font-size: 28px; margin: 0; color: #1e293b;">HRC Imóveis</h1>
+                    <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">Gestão de Imóveis e Aluguéis</p>
+                </div>
+                <div style="text-align: right;">
+                    <h2 style="font-size: 18px; margin: 0; text-transform: uppercase; color: #3b82f6;">Fatura de Aluguel</h2>
+                    <p style="font-size: 14px; margin: 5px 0 0 0;">Data: <span id="pdf-current-date"></span></p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3 style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Locatário</h3>
+                    <p style="font-weight: 700; margin: 0; font-size: 16px;"><span id="pdf-tenant-name"></span></p>
+                    <p style="margin: 4px 0 0 0; font-size: 14px;">Imóvel: <span id="pdf-house-number"></span></p>
+                </div>
+                <div style="text-align: right;">
+                    <h3 style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Período de Referência</h3>
+                    <p style="font-weight: 700; margin: 0; font-size: 16px;"><span id="pdf-month-ref"></span></p>
+                    <p style="margin: 4px 0 0 0; font-size: 14px;">Vencimento: <span id="pdf-due-date"></span></p>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;">Descrição dos Itens</th>
+                        <th style="padding: 12px; text-align: right; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #64748b;">Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-items-list">
+                    <!-- Dinâmico -->
+                </tbody>
+                <tfoot>
+                    <tr style="border-top: 2px solid #333;">
+                        <td style="padding: 15px 12px; font-weight: 700; font-size: 16px;">VALOR TOTAL A PAGAR</td>
+                        <td style="padding: 15px 12px; text-align: right; font-weight: 700; font-size: 18px; color: #1e40af;"><span id="pdf-total-value"></span></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div style="background: #f8fafc; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 30px;">
+                <div style="background: white; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                    <img id="pdf-pix-qrcode" src="" alt="QR PIX" style="width: 140px; height: 140px; display: block;">
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 14px; margin: 0 0 10px 0; color: #1e293b;">Pagamento via PIX</h3>
+                    <p style="font-size: 12px; margin: 0; color: #64748b;">Beneficiário: Henrique Rocha Clavijo</p>
+                    <p style="font-size: 12px; margin: 4px 0 0 0; color: #64748b;">Código PIX Copia e Cola:</p>
+                    <div style="margin-top: 8px; background: #fff; padding: 8px; font-size: 10px; border: 1px dashed #cbd5e1; word-break: break-all; color: #334155;">
+                        <span id="pdf-pix-code"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Este documento é uma fatura informativa gerada digitalmente pelo sistema Lumina RPM.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cadastro de Usuário -->
+    <div class="modal-overlay" id="modal-user">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-user-title">Novo Usuário</h2>
+                <button class="close-btn" id="close-modal-user"><i class='bx bx-x'></i></button>
+            </div>
+            <form class="modal-form" id="form-user">
+                <input type="hidden" id="user-id">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="user-name" placeholder="Ex: João Silva" required>
+                </div>
+                <div class="form-group">
+                    <label>Login (Usuário)</label>
+                    <input type="text" id="user-login" placeholder="Ex: joao.silva" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="user-password" placeholder="Digite a senha" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" style="margin-top: 10px;">Salvar Acesso</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
