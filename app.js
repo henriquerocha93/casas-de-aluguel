@@ -80,6 +80,9 @@ function calculateInvoice(house, monthStr) {
     let penalty = 0;
     let interest = 0;
     let energy = existingRecord && existingRecord.energy ? parseFloat(existingRecord.energy) : 0;
+    let energyTax = existingRecord && existingRecord.energyTax ? parseFloat(existingRecord.energyTax) : 0;
+    let energyKwh = existingRecord && existingRecord.energyKwh ? parseFloat(existingRecord.energyKwh) : 0;
+    let energyPrice = existingRecord && existingRecord.energyPrice ? parseFloat(existingRecord.energyPrice) : 0.95;
     let total = baseValue + energy;
     
     if (existingRecord && existingRecord.status === 'Pago') {
@@ -88,6 +91,9 @@ function calculateInvoice(house, monthStr) {
             dueDate,
             baseValue,
             energy,
+            energyTax,
+            energyKwh,
+            energyPrice,
             penalty: 0,
             interest: 0,
             total: parseFloat(existingRecord.amountPaid),
@@ -116,7 +122,7 @@ function calculateInvoice(house, monthStr) {
     }
     
     return {
-        status, dueDate, baseValue, energy, penalty, interest, total
+        status, dueDate, baseValue, energy, energyTax, energyKwh, energyPrice, penalty, interest, total
     };
 }
 
@@ -222,7 +228,8 @@ function openEnergyModal(id, month) {
     let record = house.payments ? house.payments.find(p => p.month === month) : null;
     
     document.getElementById('energy-modal-kwh').value = record && record.energyKwh ? record.energyKwh : '';
-    document.getElementById('energy-modal-price').value = 0.95; // Valor padrão ou buscar do record se quiser persistir preço
+    document.getElementById('energy-modal-price').value = record && record.energyPrice !== undefined ? record.energyPrice : 0.95;
+    document.getElementById('energy-modal-tax').value = record && record.energyTax !== undefined ? record.energyTax : '0.00';
     document.getElementById('energy-modal-total-value').value = invoice.energy > 0 ? invoice.energy : '';
     
     document.getElementById('modal-energy').classList.add('active');
@@ -233,6 +240,8 @@ function handleEnergySubmit(e) {
     const id = document.getElementById('energy-house-id').value;
     const month = document.getElementById('energy-month').value;
     const kwh = parseFloat(document.getElementById('energy-modal-kwh').value) || 0;
+    const price = parseFloat(document.getElementById('energy-modal-price').value) || 0.95;
+    const tax = parseFloat(document.getElementById('energy-modal-tax').value) || 0;
     const totalEnergy = parseFloat(document.getElementById('energy-modal-total-value').value) || 0;
     
     const house = houses.find(h => h.id === id);
@@ -243,6 +252,8 @@ function handleEnergySubmit(e) {
     if (record) {
         record.energy = totalEnergy;
         record.energyKwh = kwh;
+        record.energyPrice = price;
+        record.energyTax = tax;
         // Se já estava pago, temos que atualizar o amountPaid total
         if (record.status === 'Pago') {
             // Recalcula o total baseado no aluguel base + multas ja gravadas + nova energia
@@ -256,6 +267,8 @@ function handleEnergySubmit(e) {
             status: 'Pendente',
             energy: totalEnergy,
             energyKwh: kwh,
+            energyPrice: price,
+            energyTax: tax,
             amountPaid: 0 // Ainda não pago
         });
     }
@@ -422,13 +435,17 @@ function setupEventListeners() {
     const updateEnergyModalTotal = () => {
         const kwh = parseFloat(document.getElementById('energy-modal-kwh').value) || 0;
         const price = parseFloat(document.getElementById('energy-modal-price').value) || 0;
-        if (kwh > 0) {
-            document.getElementById('energy-modal-total-value').value = (kwh * price).toFixed(2);
+        const tax = parseFloat(document.getElementById('energy-modal-tax').value) || 0;
+        if (kwh > 0 || tax > 0) {
+            document.getElementById('energy-modal-total-value').value = ((kwh * price) + tax).toFixed(2);
+        } else {
+            document.getElementById('energy-modal-total-value').value = '';
         }
     };
     
     document.getElementById('energy-modal-kwh').addEventListener('input', updateEnergyModalTotal);
     document.getElementById('energy-modal-price').addEventListener('input', updateEnergyModalTotal);
+    document.getElementById('energy-modal-tax').addEventListener('input', updateEnergyModalTotal);
     
     // Menu links
     document.getElementById('menu-dashboard-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('dashboard'); });
@@ -456,9 +473,12 @@ function setupEventListeners() {
     const calcUpdateEnergy = () => {
         const kwh = parseFloat(document.getElementById('energy-kwh').value) || 0;
         const price = parseFloat(document.getElementById('energy-price').value) || 0;
-        if (kwh > 0) {
-            const totalEnergyR$ = kwh * price;
+        const tax = parseFloat(document.getElementById('energy-tax').value) || 0;
+        if (kwh > 0 || tax > 0) {
+            const totalEnergyR$ = (kwh * price) + tax;
             document.getElementById('energy-value').value = totalEnergyR$.toFixed(2);
+        } else {
+            document.getElementById('energy-value').value = '';
         }
         updateFinalTotal();
     };
@@ -477,6 +497,7 @@ function setupEventListeners() {
 
     document.getElementById('energy-kwh').addEventListener('input', calcUpdateEnergy);
     document.getElementById('energy-price').addEventListener('input', calcUpdateEnergy);
+    document.getElementById('energy-tax').addEventListener('input', calcUpdateEnergy);
     document.getElementById('energy-value').addEventListener('input', updateFinalTotal);
 
     // Toggle Sidebar Mobile
@@ -580,6 +601,12 @@ window.openPaymentModal = function(id, month) {
         feesRow.style.display = 'none';
     }
     
+    // Buscar se já tem record para carregar inputs de energia específicos
+    let record = house.payments ? house.payments.find(p => p.month === month) : null;
+    document.getElementById('energy-kwh').value = record && record.energyKwh ? record.energyKwh : '';
+    document.getElementById('energy-price').value = record && record.energyPrice !== undefined ? record.energyPrice : 0.95;
+    document.getElementById('energy-tax').value = record && record.energyTax !== undefined ? record.energyTax : '0.00';
+    
     document.getElementById('energy-value').value = invoice.energy > 0 ? invoice.energy : '';
     document.getElementById('pay-total-final').textContent = formatCurrency(invoice.total);
     
@@ -608,12 +635,16 @@ function handlePaymentSubmit(e) {
     house.payments = house.payments.filter(p => p.month !== month);
     
     const kwhVal = parseFloat(document.getElementById('energy-kwh').value) || 0;
+    const priceVal = parseFloat(document.getElementById('energy-price').value) || 0.95;
+    const taxVal = parseFloat(document.getElementById('energy-tax').value) || 0;
 
     house.payments.push({
         month: month,
         status: 'Pago',
         energy: energyVal,
         energyKwh: kwhVal,
+        energyPrice: priceVal,
+        energyTax: taxVal,
         amountPaid: amountPaid,
         payDate: getTodayString()
     });
@@ -762,7 +793,21 @@ function handleWhatsAppSend() {
     message += `🏠 *Imóvel:* ${house.number}\n`;
     message += `👤 *Inquilino:* ${house.tenant}\n\n`;
     message += `💰 *Valor Base:* ${formatCurrency(invoice.baseValue)}\n`;
-    if (invoice.energy > 0) message += `⚡ *Energia:* ${formatCurrency(invoice.energy)}\n`;
+    
+    if (invoice.energy > 0) {
+        const baseEnergy = invoice.energy - invoice.energyTax;
+        if (baseEnergy > 0) {
+            if (invoice.energyKwh > 0 && invoice.energyPrice > 0) {
+                message += `⚡ *Energia (${invoice.energyKwh} kWh x R$ ${invoice.energyPrice.toFixed(2)}):* ${formatCurrency(baseEnergy)}\n`;
+            } else {
+                message += `⚡ *Energia:* ${formatCurrency(baseEnergy)}\n`;
+            }
+        }
+        if (invoice.energyTax > 0) {
+            message += `💡 *Taxas Equatorial:* ${formatCurrency(invoice.energyTax)}\n`;
+        }
+    }
+    
     if (invoice.penalty > 0) message += `⚠ *Multa:* ${formatCurrency(invoice.penalty)}\n`;
     if (invoice.interest > 0) message += `📈 *Juros Diários:* ${formatCurrency(invoice.interest)}\n`;
     message += `\n💵 *TOTAL A PAGAR:* *${formatCurrency(invoice.total)}*\n\n`;
@@ -835,7 +880,17 @@ function fillPdfTemplate(house, invoice, pixCode, monthStr) {
     `;
 
     if (invoice.energy > 0) {
-        itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">Consumo de Energia (Luz)</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(invoice.energy)}</td></tr>`;
+        const baseEnergy = invoice.energy - invoice.energyTax;
+        if (baseEnergy > 0) {
+            let energyDesc = "Consumo de Energia (Luz)";
+            if (invoice.energyKwh > 0 && invoice.energyPrice > 0) {
+                energyDesc += ` - ${invoice.energyKwh} kWh x R$ ${invoice.energyPrice.toFixed(2)}`;
+            }
+            itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">${energyDesc}</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(baseEnergy)}</td></tr>`;
+        }
+        if (invoice.energyTax > 0) {
+            itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">Taxas Equatorial (Luz)</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(invoice.energyTax)}</td></tr>`;
+        }
     }
     if (invoice.penalty > 0) {
         itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #ef4444;">Multa por Atraso</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px; color: #ef4444;">${formatCurrency(invoice.penalty)}</td></tr>`;
