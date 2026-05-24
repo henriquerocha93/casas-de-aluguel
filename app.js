@@ -496,6 +496,9 @@ function renderTable() {
     if (!housesGrid) return;
     
     housesGrid.innerHTML = '';
+    housesGrid.className = ''; // Remove default grid
+    
+    const groups = {};
     
     houses.forEach(house => {
         if (searchText && !house.number.toLowerCase().includes(searchText) && !house.tenant.toLowerCase().includes(searchText)) {
@@ -565,8 +568,29 @@ function renderTable() {
                 </div>
             </div>
         `;
-        housesGrid.appendChild(card);
+        `;
+        
+        const addrKey = house.address ? `${house.address}${house.cep ? ' (CEP: '+house.cep+')' : ''}` : 'Endereço Não Informado';
+        if (!groups[addrKey]) groups[addrKey] = [];
+        groups[addrKey].push(card);
     });
+    
+    for (const [address, cards] of Object.entries(groups)) {
+        const groupContainer = document.createElement('div');
+        groupContainer.className = 'address-group';
+        
+        const header = document.createElement('div');
+        header.className = 'address-group-header';
+        header.innerHTML = `<h3><i class='bx bx-map'></i> ${address}</h3>`;
+        groupContainer.appendChild(header);
+        
+        const gridInner = document.createElement('div');
+        gridInner.className = 'houses-grid-inner';
+        cards.forEach(c => gridInner.appendChild(c));
+        
+        groupContainer.appendChild(gridInner);
+        housesGrid.appendChild(groupContainer);
+    }
 }
 
 function updateDashboard() {
@@ -768,6 +792,8 @@ function handleHouseSubmit(e) {
         number: document.getElementById('house-number').value,
         tenant: document.getElementById('tenant-name').value,
         phone: document.getElementById('tenant-phone').value,
+        address: document.getElementById('house-address') ? document.getElementById('house-address').value : '',
+        cep: document.getElementById('house-cep') ? document.getElementById('house-cep').value : '',
         dueDay: parseInt(document.getElementById('due-day').value),
         startDate: document.getElementById('start-date').value,
         rentValue: parseFloat(document.getElementById('rent-value').value),
@@ -809,6 +835,8 @@ function editHouse(id) {
     document.getElementById('house-number').value = house.number;
     document.getElementById('tenant-name').value = house.tenant;
     document.getElementById('tenant-phone').value = house.phone;
+    if (document.getElementById('house-address')) document.getElementById('house-address').value = house.address || '';
+    if (document.getElementById('house-cep')) document.getElementById('house-cep').value = house.cep || '';
     document.getElementById('due-day').value = house.dueDay;
     document.getElementById('start-date').value = house.startDate;
     document.getElementById('rent-value').value = house.rentValue;

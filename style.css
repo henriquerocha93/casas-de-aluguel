@@ -501,12 +501,36 @@ hr {
     color: var(--danger);
 }
 
-/* Houses Grid Layout */
-.houses-grid {
+/* Houses Grid Layout and Address Groups */
+.address-group {
+    margin-bottom: 40px;
+    background: var(--bg-main);
+    border-radius: var(--radius);
+}
+
+.address-group-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+}
+
+.address-group-header h3 {
+    font-size: 18px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.address-group-header h3 i {
+    color: var(--primary);
+    font-size: 22px;
+}
+
+.houses-grid-inner {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
-    padding: 8px 0 24px 0;
 }
 
 .house-card {
