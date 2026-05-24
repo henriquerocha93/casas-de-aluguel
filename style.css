@@ -647,6 +647,117 @@ hr {
     display: flex;
     gap: 12px;
 }
+/* Internet Topology Animation */
+#internet-topology {
+    position: relative;
+    width: 100%;
+    height: 350px;
+    margin-bottom: 24px;
+    background: radial-gradient(circle at center, var(--bg-panel) 0%, var(--bg-main) 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.topo-tower {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(37, 99, 235, 0.15);
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+    animation: pulseTower 2s infinite alternate;
+}
+
+.topo-tower i {
+    font-size: 32px;
+    color: var(--primary);
+}
+
+@keyframes pulseTower {
+    0% { box-shadow: 0 0 10px rgba(37, 99, 235, 0.2); }
+    100% { box-shadow: 0 0 30px rgba(37, 99, 235, 0.8), 0 0 50px rgba(37, 99, 235, 0.4); }
+}
+
+.topo-house {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background: var(--bg-panel);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s;
+}
+
+.topo-house.active {
+    border-color: var(--success);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
+.topo-house.inactive {
+    border-color: var(--danger);
+    opacity: 0.7;
+}
+
+.topo-house i {
+    font-size: 20px;
+    color: var(--text-muted);
+}
+
+.topo-house.active i {
+    color: var(--success);
+}
+
+.topo-house.inactive i {
+    color: var(--danger);
+}
+
+.topo-house-label {
+    position: absolute;
+    top: 48px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-main);
+    background: var(--bg-panel);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+.topo-line-active {
+    stroke: var(--success);
+    stroke-width: 2.5;
+    stroke-dasharray: 6, 6;
+    animation: flowData 0.8s linear infinite;
+    filter: drop-shadow(0 0 5px var(--success));
+}
+
+.topo-line-inactive {
+    stroke: var(--danger);
+    stroke-width: 1.5;
+    stroke-dasharray: 4, 4;
+    opacity: 0.4;
+}
+
+@keyframes flowData {
+    from { stroke-dashoffset: 12; }
+    to { stroke-dashoffset: 0; }
+}
 
 /* Responsive Mobile */
 @media (max-width: 768px) {

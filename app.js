@@ -394,6 +394,10 @@ function renderInternetTable() {
         `;
         tbody.appendChild(tr);
     });
+
+    if (document.getElementById('internet-section').style.display === 'block') {
+        renderInternetAnimation();
+    }
 }
 
 function toggleInternet(houseId, isChecked) {
@@ -406,6 +410,7 @@ function toggleInternet(houseId, isChecked) {
         saveHousesToCloud();
         renderApp();
         renderInternetTable();
+        renderInternetAnimation();
     }
 }
 
@@ -418,6 +423,65 @@ function updateInternetValue(houseId, val) {
         // não precisa renderizar a tabela inteira, mas garante atualizar o estado.
     }
 }
+
+function renderInternetAnimation() {
+    const topology = document.getElementById('internet-topology');
+    const svgLines = document.getElementById('topology-lines');
+    const nodesContainer = document.getElementById('topology-nodes');
+    
+    if (!topology || !svgLines || !nodesContainer || houses.length === 0) return;
+    
+    // Clear previous
+    svgLines.innerHTML = '';
+    // Keep only the tower
+    nodesContainer.innerHTML = `
+        <div class="topo-tower" id="topo-tower">
+            <i class='bx bx-broadcast'></i>
+        </div>
+    `;
+    
+    const width = topology.clientWidth || 800; // fallback if hidden
+    const height = topology.clientHeight || 350;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Calculate positions for houses in a circle/ellipse
+    const radiusX = Math.min(width * 0.4, 300);
+    const radiusY = Math.min(height * 0.35, 120);
+    
+    houses.forEach((house, index) => {
+        const angle = (index / houses.length) * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + radiusX * Math.cos(angle);
+        const y = centerY + radiusY * Math.sin(angle);
+        
+        // Add house node
+        const node = document.createElement('div');
+        node.className = `topo-house ${house.hasInternet ? 'active' : 'inactive'}`;
+        node.style.left = `${x}px`;
+        node.style.top = `${y}px`;
+        node.innerHTML = `
+            <i class='bx bx-home-alt'></i>
+            <div class="topo-house-label">${house.number}</div>
+        `;
+        nodesContainer.appendChild(node);
+        
+        // Add SVG line
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', centerX);
+        line.setAttribute('y1', centerY);
+        line.setAttribute('x2', x);
+        line.setAttribute('y2', y);
+        line.setAttribute('class', house.hasInternet ? 'topo-line-active' : 'topo-line-inactive');
+        svgLines.appendChild(line);
+    });
+}
+
+// Window resize to redraw
+window.addEventListener('resize', () => {
+    if (document.getElementById('internet-section').style.display === 'block') {
+        renderInternetAnimation();
+    }
+});
 
 // ==========================
 // TABELA E DASHBOARD
