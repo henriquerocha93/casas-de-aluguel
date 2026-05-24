@@ -184,8 +184,8 @@ function calculateInvoice(house, monthStr) {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
         // Usa as taxas específicas da casa ou o padrão global se não existirem
-        const pRate = (house.penaltyPct !== undefined ? house.penaltyPct : (PENALTY_FEE * 100)) / 100;
-        const iRate = (house.interestPct !== undefined ? house.interestPct : (DAILY_INTEREST * 100)) / 100;
+        const pRate = (house.penaltyPct !== undefined && house.penaltyPct !== null && !isNaN(house.penaltyPct) ? house.penaltyPct : (PENALTY_FEE * 100)) / 100;
+        const iRate = (house.interestPct !== undefined && house.interestPct !== null && !isNaN(house.interestPct) ? house.interestPct : (DAILY_INTEREST * 100)) / 100;
 
         penalty = baseValue * pRate;
         interest = baseValue * iRate * diffDays;
@@ -771,8 +771,8 @@ function handleHouseSubmit(e) {
         dueDay: parseInt(document.getElementById('due-day').value),
         startDate: document.getElementById('start-date').value,
         rentValue: parseFloat(document.getElementById('rent-value').value),
-        penaltyPct: parseFloat(document.getElementById('penalty-pct').value),
-        interestPct: parseFloat(document.getElementById('interest-pct').value),
+        penaltyPct: document.getElementById('penalty-pct').value === "" ? 0 : parseFloat(document.getElementById('penalty-pct').value),
+        interestPct: document.getElementById('interest-pct').value === "" ? 0 : parseFloat(document.getElementById('interest-pct').value),
         payments: []
     };
 
@@ -812,8 +812,8 @@ function editHouse(id) {
     document.getElementById('due-day').value = house.dueDay;
     document.getElementById('start-date').value = house.startDate;
     document.getElementById('rent-value').value = house.rentValue;
-    document.getElementById('penalty-pct').value = house.penaltyPct !== undefined ? house.penaltyPct : "2.00";
-    document.getElementById('interest-pct').value = house.interestPct !== undefined ? house.interestPct : "0.33";
+    document.getElementById('penalty-pct').value = house.penaltyPct !== undefined && house.penaltyPct !== null && !isNaN(house.penaltyPct) ? house.penaltyPct : "2.00";
+    document.getElementById('interest-pct').value = house.interestPct !== undefined && house.interestPct !== null && !isNaN(house.interestPct) ? house.interestPct : "0.33";
     
     document.getElementById('modal-house-title').textContent = "Editar Imóvel";
     document.getElementById('modal-house').classList.add('active');
