@@ -354,49 +354,80 @@ function renderTable() {
     const statusFilter = document.getElementById('status-filter').value;
     const filterMonth = document.getElementById('month-filter').value;
     
-    tableBody.innerHTML = '';
+    const housesGrid = document.getElementById('houses-grid');
+    if (!housesGrid) return;
+    
+    housesGrid.innerHTML = '';
     
     houses.forEach(house => {
-        // Aplica Filtro Texto
         if (searchText && !house.number.toLowerCase().includes(searchText) && !house.tenant.toLowerCase().includes(searchText)) {
             return;
         }
         
         const invoice = calculateInvoice(house, filterMonth);
         
-        // Aplica Filtro Status
         if (statusFilter !== 'all' && invoice.status !== statusFilter) {
             return;
         }
         
-        const tr = document.createElement('tr');
-        
         const isLate = invoice.status === 'Atrasado';
         
-        tr.innerHTML = `
-            <td>
-                <strong>${house.number}</strong>
-            </td>
-            <td class="house-tenant">
-                <span>${house.tenant}</span>
-                <span class="phone">${house.phone}</span>
-            </td>
-            <td class="${isLate ? 'text-danger' : ''}">${formatDate(invoice.dueDate)}</td>
-            <td>${formatCurrency(invoice.baseValue)} <small>base</small> ${invoice.energy > 0 ? `<br>+ ${formatCurrency(invoice.energy)} <small>luz</small>` : ''}</td>
-            <td><strong>${formatCurrency(invoice.total)}</strong></td>
-            <td><span class="badge badge-${invoice.status}">${invoice.status}</span></td>
-            <td style="text-align:center;">
-                <button class="btn-icon" style="color: #25D366;" onclick="openShareModal('${house.id}', '${filterMonth}')" title="Enviar Whats"><i class='bx bxl-whatsapp'></i></button>
-            </td>
-            <td class="actions">
-                ${invoice.status !== 'Pago' ? 
-                `<button class="btn-icon pay" onclick="openPaymentModal('${house.id}', '${filterMonth}')" title="Registrar Pagamento"><i class='bx bx-dollar-circle'></i></button>` 
-                : `<button class="btn-icon text-warning" onclick="revertPayment('${house.id}', '${filterMonth}')" title="Cancelar Pagamento"><i class='bx bx-undo'></i></button>`}
-                <button class="btn-icon" onclick="editHouse('${house.id}')" title="Editar"><i class='bx bx-edit' ></i></button>
-                <button class="btn-icon delete" onclick="deleteHouse('${house.id}')" title="Excluir"><i class='bx bx-trash' ></i></button>
-            </td>
+        const card = document.createElement('div');
+        card.className = `house-card status-${invoice.status}`;
+        
+        card.innerHTML = `
+            <div class="house-card-header">
+                <div class="house-card-icon">
+                    <i class='bx bx-home-alt'></i>
+                </div>
+                <div class="house-card-title">
+                    <h3>${house.number}</h3>
+                    <span class="badge badge-${invoice.status}">${invoice.status}</span>
+                </div>
+            </div>
+            
+            <div class="house-card-body">
+                <div class="hc-info-row">
+                    <i class='bx bx-user'></i>
+                    <div>
+                        <strong>${house.tenant}</strong>
+                        <small>${house.phone}</small>
+                    </div>
+                </div>
+                <div class="hc-info-row">
+                    <i class='bx bx-calendar'></i>
+                    <div>
+                        <strong class="${isLate ? 'text-danger' : ''}">${formatDate(invoice.dueDate)}</strong>
+                        <small>Vencimento</small>
+                    </div>
+                </div>
+                
+                <div class="hc-finance">
+                    <div class="hc-finance-item">
+                        <small>Aluguel + Luz</small>
+                        <strong>${formatCurrency(invoice.baseValue)} ${invoice.energy > 0 ? `+ ${formatCurrency(invoice.energy)}` : ''}</strong>
+                    </div>
+                    <div class="hc-finance-item total">
+                        <small>Total Final</small>
+                        <strong>${formatCurrency(invoice.total)}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="house-card-actions">
+                <div class="hc-actions-left">
+                    <button class="btn-icon" style="color: #25D366;" onclick="openShareModal('${house.id}', '${filterMonth}')" title="Enviar Whats"><i class='bx bxl-whatsapp'></i></button>
+                    ${invoice.status !== 'Pago' ? 
+                    `<button class="btn-icon pay" style="color: var(--success);" onclick="openPaymentModal('${house.id}', '${filterMonth}')" title="Registrar Pagamento"><i class='bx bx-dollar-circle'></i></button>` 
+                    : `<button class="btn-icon text-warning" onclick="revertPayment('${house.id}', '${filterMonth}')" title="Cancelar Pagamento"><i class='bx bx-undo'></i></button>`}
+                </div>
+                <div class="hc-actions-right">
+                    <button class="btn-icon" onclick="editHouse('${house.id}')" title="Editar"><i class='bx bx-edit' ></i></button>
+                    <button class="btn-icon delete" onclick="deleteHouse('${house.id}')" title="Excluir"><i class='bx bx-trash' ></i></button>
+                </div>
+            </div>
         `;
-        tableBody.appendChild(tr);
+        housesGrid.appendChild(card);
     });
 }
 

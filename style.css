@@ -501,6 +501,153 @@ hr {
     color: var(--danger);
 }
 
+/* Houses Grid Layout */
+.houses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    padding: 8px 0 24px 0;
+}
+
+.house-card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.house-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.house-card.status-Pago { border-top: 4px solid var(--success); }
+.house-card.status-Pendente { border-top: 4px solid var(--warning); }
+.house-card.status-Atrasado { border-top: 4px solid var(--danger); }
+
+.house-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.house-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--text-main);
+}
+
+.house-card.status-Pago .house-card-icon { background: var(--success-bg); color: var(--success); }
+.house-card.status-Pendente .house-card-icon { background: var(--warning-bg); color: var(--warning); }
+.house-card.status-Atrasado .house-card-icon { background: var(--danger-bg); color: var(--danger); }
+
+.house-card-title {
+    flex: 1;
+}
+
+.house-card-title h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.house-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.hc-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.hc-info-row i {
+    font-size: 20px;
+    color: var(--text-muted);
+}
+
+.hc-info-row div {
+    display: flex;
+    flex-direction: column;
+}
+
+.hc-info-row div strong {
+    font-weight: 500;
+    color: var(--text-main);
+    font-size: 15px;
+}
+
+.hc-info-row div small {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.hc-finance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.2);
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.hc-finance-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.hc-finance-item small {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hc-finance-item strong {
+    font-size: 15px;
+    color: var(--text-main);
+    margin-top: 4px;
+}
+
+.hc-finance-item.total strong {
+    font-size: 18px;
+    color: var(--primary);
+}
+
+.house-card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 4px;
+}
+
+.hc-actions-left, .hc-actions-right {
+    display: flex;
+    gap: 12px;
+}
+
 /* Responsive Mobile */
 @media (max-width: 768px) {
     .sidebar {
