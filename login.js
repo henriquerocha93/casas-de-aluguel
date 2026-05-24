@@ -22,13 +22,20 @@ async function initUsers() {
         database.ref('hrc_users').once('value', (snapshot) => {
             const users = snapshot.val();
             if (!users || Object.keys(users).length === 0) {
-                const adminUser = {
-                    id: 'admin_root',
-                    username: 'admin',
-                    password: 'admin',
-                    name: 'Administrador'
-                };
-                database.ref('hrc_users/admin_root').set(adminUser).then(() => resolve());
+                const localUsers = JSON.parse(localStorage.getItem('hrc_users'));
+                if (localUsers && localUsers.length > 0) {
+                    let usersObj = {};
+                    localUsers.forEach(u => usersObj[u.id] = u);
+                    database.ref('hrc_users').set(usersObj).then(() => resolve());
+                } else {
+                    const adminUser = {
+                        id: 'admin_root',
+                        username: 'admin',
+                        password: 'admin',
+                        name: 'Administrador'
+                    };
+                    database.ref('hrc_users/admin_root').set(adminUser).then(() => resolve());
+                }
             } else {
                 resolve();
             }

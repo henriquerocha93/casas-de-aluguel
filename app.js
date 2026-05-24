@@ -32,6 +32,34 @@ const database = firebase.database();
 let houses = [];
 let systemUsers = [];
 
+// ==========================
+// MIGRAÇÃO LOCAL -> NUVEM
+// ==========================
+function migrateLocalToCloud() {
+    const localHouses = JSON.parse(localStorage.getItem('lumina_houses'));
+    if (localHouses && localHouses.length > 0) {
+        database.ref('lumina_houses').once('value', (snapshot) => {
+            if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
+                let housesObj = {};
+                localHouses.forEach(h => housesObj[h.id] = h);
+                database.ref('lumina_houses').set(housesObj);
+            }
+        });
+    }
+
+    const localUsers = JSON.parse(localStorage.getItem('hrc_users'));
+    if (localUsers && localUsers.length > 0) {
+        database.ref('hrc_users').once('value', (snapshot) => {
+            if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
+                let usersObj = {};
+                localUsers.forEach(u => usersObj[u.id] = u);
+                database.ref('hrc_users').set(usersObj);
+            }
+        });
+    }
+}
+migrateLocalToCloud();
+
 database.ref('lumina_houses').on('value', (snapshot) => {
     const val = snapshot.val() || {};
     houses = Object.values(val);
