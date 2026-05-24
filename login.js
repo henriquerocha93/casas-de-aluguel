@@ -2,76 +2,56 @@
 // LOGIN & AUTENTICAÇÃO
 // ==========================
 
-// Inicializar lista de usuários se estiver vazia
-function initUsers() {
-    let users = JSON.parse(localStorage.getItem('hrc_users')) || [];
-    if (users.length === 0) {
-        // Usuário padrão inicial
-        users.push({
-            id: 'admin_root',
-            username: 'admin',
-            password: 'admin',
-            name: 'Administrador'
+const firebaseConfig = {
+  apiKey: "AIzaSyBxLvYPA4ESwZUftTrlvJ3NNxWwqO0EgeY",
+  authDomain: "hrc-imoveis.firebaseapp.com",
+  projectId: "hrc-imoveis",
+  storageBucket: "hrc-imoveis.firebasestorage.app",
+  messagingSenderId: "627895479271",
+  appId: "1:627895479271:web:e6e87ee0a7f05193f12b42",
+  databaseURL: "https://hrc-imoveis-default-rtdb.firebaseio.com"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
+async function initUsers() {
+    return new Promise((resolve) => {
+        database.ref('hrc_users').once('value', (snapshot) => {
+            const users = snapshot.val();
+            if (!users || Object.keys(users).length === 0) {
+                const adminUser = {
+                    id: 'admin_root',
+                    username: 'admin',
+                    password: 'admin',
+                    name: 'Administrador'
+                };
+                database.ref('hrc_users/admin_root').set(adminUser).then(() => resolve());
+            } else {
+                resolve();
+            }
         });
-        localStorage.setItem('hrc_users', JSON.stringify(users));
-    }
+    });
 }
 
-// Verifica se o Supabase está configurado e retorna o client
-function getSupabaseClient() {
-    const url = localStorage.getItem('hrc_supabase_url');
-    const key = localStorage.getItem('hrc_supabase_key');
-    if (url && key && typeof supabase !== 'undefined' && supabase.createClient) {
-        try {
-            return supabase.createClient(url, key);
-        } catch (e) {
-            console.warn('Falha ao criar cliente Supabase no login:', e);
-            return null;
-        }
-    }
-    return null;
-}
-
-// Tenta autenticar via Supabase, retorna o user ou null
 async function authenticateCloud(username, password) {
-    const sb = getSupabaseClient();
-    if (!sb) return null;
-
-    try {
-        const { data, error } = await sb
-            .from('lumina_users')
-            .select('*')
-            .eq('username', username)
-            .single();
-
-        if (error || !data) return null;
-
-        if (data.password === password) {
-            return {
-                id: data.id,
-                username: data.username,
-                password: data.password,
-                name: data.name
-            };
-        }
-        return null;
-    } catch (e) {
-        console.warn('Erro na autenticação cloud:', e);
-        return null;
-    }
+    return new Promise((resolve) => {
+        database.ref('hrc_users').once('value', (snapshot) => {
+            const usersObj = snapshot.val();
+            if (!usersObj) {
+                resolve(null);
+                return;
+            }
+            const users = Object.values(usersObj);
+            const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+            resolve(user || null);
+        });
+    });
 }
 
-// Autentica localmente (fallback)
-function authenticateLocal(username, password) {
-    const users = JSON.parse(localStorage.getItem('hrc_users')) || [];
-    return users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password) || null;
-}
-
-// Lógica de login
-document.addEventListener('DOMContentLoaded', () => {
-    initUsers();
-    
-    // Se já estiver autenticado e o "Lembrar-me" foi usado, pula pro index
+document.addEventListener('DOMContentLoaded', async () => {
     if (localStorage.getItem('hrc_auth_token')) {
         window.location.href = 'index.html';
         return;
@@ -80,6 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const errorAlert = document.getElementById('error-alert');
 
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Conectando banco...';
+
+    await initUsers();
+    
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -87,21 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const passVal = document.getElementById('password').value;
         const remember = document.getElementById('remember-me').checked;
 
-        // Desabilita o botão enquanto tenta login
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.innerHTML;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Autenticando...';
 
-        let user = null;
-
-        // 1. Tenta autenticar na nuvem (se configurada)
-        user = await authenticateCloud(userVal, passVal);
-
-        // 2. Fallback local
-        if (!user) {
-            user = authenticateLocal(userVal, passVal);
-        }
+        const user = await authenticateCloud(userVal, passVal);
 
         if (user) {
             const token = btoa(JSON.stringify({ 
@@ -111,14 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
 
             if (remember) {
-                // Persistente (fecha o navegador e continua logado)
                 localStorage.setItem('hrc_auth_token', token);
             } else {
-                // Temporário (expira ao fechar o navegador)
                 sessionStorage.setItem('hrc_auth_token', token);
             }
 
-            // Guardar nome do usuário ativo no momento
             localStorage.setItem('current_user', user.name);
 
             window.location.href = 'index.html';

@@ -14,8 +14,47 @@ const DAILY_INTEREST = 0.0033; // Juros 0,33% ao dia
 // ==========================
 // ESTADO DA APLICAÇÃO
 // ==========================
-let houses = JSON.parse(localStorage.getItem('lumina_houses')) || [];
-let systemUsers = JSON.parse(localStorage.getItem('hrc_users')) || [];
+const firebaseConfig = {
+  apiKey: "AIzaSyBxLvYPA4ESwZUftTrlvJ3NNxWwqO0EgeY",
+  authDomain: "hrc-imoveis.firebaseapp.com",
+  projectId: "hrc-imoveis",
+  storageBucket: "hrc-imoveis.firebasestorage.app",
+  messagingSenderId: "627895479271",
+  appId: "1:627895479271:web:e6e87ee0a7f05193f12b42",
+  databaseURL: "https://hrc-imoveis-default-rtdb.firebaseio.com"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
+
+let houses = [];
+let systemUsers = [];
+
+database.ref('lumina_houses').on('value', (snapshot) => {
+    const val = snapshot.val() || {};
+    houses = Object.values(val);
+    renderApp();
+});
+
+database.ref('hrc_users').on('value', (snapshot) => {
+    const val = snapshot.val() || {};
+    systemUsers = Object.values(val);
+    renderUserTable();
+});
+
+function saveHousesToCloud() {
+    let housesObj = {};
+    houses.forEach(h => housesObj[h.id] = h);
+    database.ref('lumina_houses').set(housesObj);
+}
+
+function saveUsersToCloud() {
+    let usersObj = {};
+    systemUsers.forEach(u => usersObj[u.id] = u);
+    database.ref('hrc_users').set(usersObj);
+}
 let currentMonthFilter = getCurrentMonthStr(); // Formato YYYY-MM
 let chartInstance = null;
 
@@ -136,13 +175,12 @@ function formatDate(dateItem) {
 }
 
 function renderApp() {
-    saveData();
     renderTable();
     updateDashboard();
 }
 
 function saveData() {
-    localStorage.setItem('lumina_houses', JSON.stringify(houses));
+    saveHousesToCloud();
 }
 
 function switchSection(section) {
@@ -274,6 +312,7 @@ function handleEnergySubmit(e) {
     }
     
     document.getElementById('modal-energy').classList.remove('active');
+    saveHousesToCloud();
     renderApp();
     renderLuzTable();
 }
@@ -552,12 +591,14 @@ function handleHouseSubmit(e) {
     }
 
     document.getElementById('modal-house').classList.remove('active');
+    saveHousesToCloud();
     renderApp();
 }
 
 function deleteHouse(id) {
     if (confirm("Tem certeza que deseja excluir este imóvel e todo o seu histórico financeiro?")) {
         houses = houses.filter(h => h.id !== id);
+        saveHousesToCloud();
         renderApp();
     }
 }
@@ -650,6 +691,7 @@ function handlePaymentSubmit(e) {
     });
     
     document.getElementById('modal-payment').classList.remove('active');
+    saveHousesToCloud();
     renderApp();
     if (document.getElementById('luz-section').style.display !== 'none') {
         renderLuzTable();
@@ -661,6 +703,7 @@ window.revertPayment = function(id, month) {
         const house = houses.find(h => h.id === id);
         if (house && house.payments) {
             house.payments = house.payments.filter(p => p.month !== month);
+            saveHousesToCloud();
             renderApp();
         }
     }
@@ -1058,7 +1101,7 @@ document.getElementById('form-user').addEventListener('submit', (e) => {
         alert('Usuário cadastrado com sucesso!');
     }
     
-    localStorage.setItem('hrc_users', JSON.stringify(systemUsers));
+    saveUsersToCloud();
     
     renderUserTable();
     document.getElementById('modal-user').classList.remove('active');
@@ -1072,7 +1115,7 @@ window.editUser = function(id) {
 window.deleteUser = function(id) {
     if (confirm('Deseja realmente excluir este acesso?')) {
         systemUsers = systemUsers.filter(u => u.id !== id);
-        localStorage.setItem('hrc_users', JSON.stringify(systemUsers));
+        saveUsersToCloud();
         renderUserTable();
     }
 };
