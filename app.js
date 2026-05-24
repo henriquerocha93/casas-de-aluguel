@@ -834,7 +834,7 @@ function handleWhatsAppSend() {
         const opt = {
             margin: 0,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
@@ -891,6 +891,9 @@ function fillPdfTemplate(house, invoice, pixCode, monthStr) {
         if (invoice.energyTax > 0) {
             itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">Taxas Equatorial (Luz)</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(invoice.energyTax)}</td></tr>`;
         }
+    } else {
+        // Luz ainda não lançada — exibe linha indicando que está pendente
+        itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #94a3b8;">Energia Elétrica (Luz)</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px; color: #94a3b8; font-style: italic;">A lançar</td></tr>`;
     }
     if (invoice.penalty > 0) {
         itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #ef4444;">Multa por Atraso</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px; color: #ef4444;">${formatCurrency(invoice.penalty)}</td></tr>`;
@@ -914,7 +917,7 @@ function handleDownloadPDF() {
         margin:       0,
         filename:     `Fatura_${house.number.replace(/\s+/g, '_')}_${monthStr.replace(/\//g, '-')}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 

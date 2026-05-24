@@ -11,6 +11,7 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta name="description" content="CRM de Controle Financeiro de Casas de Aluguel">
 </head>
 <body>
@@ -26,6 +27,7 @@
                 <li><a href="#" id="menu-houses-link"><i class='bx bx-home'></i> Imóveis</a></li>
                 <li><a href="#" id="menu-luz-link"><i class='bx bx-bolt'></i> Luz</a></li>
                 <li><a href="#" id="menu-users-link"><i class='bx bx-group'></i> Usuários</a></li>
+                <li><a href="#" id="menu-cloud-link"><i class='bx bx-cloud'></i> Nuvem</a></li>
             </ul>
             <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid var(--border); margin-top: auto;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
@@ -188,6 +190,116 @@
                             <!-- Populated via JS -->
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <!-- Seção de Nuvem (Escondida por padrão) -->
+            <section class="box-panel" id="cloud-section" style="display:none; max-width: 800px; margin: 0 auto;">
+                <div class="table-header" style="border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class='bx bx-cloud' style="font-size: 28px; color: var(--secondary);"></i>
+                        <h2 style="margin: 0;">Sincronização na Nuvem (Supabase)</h2>
+                    </div>
+                </div>
+
+                <!-- Estado: Desconectado -->
+                <div id="cloud-state-disconnected">
+                    <div style="background: rgba(37, 99, 235, 0.05); border: 1px dashed var(--primary); padding: 20px; border-radius: 12px; margin-bottom: 25px; line-height: 1.6;">
+                        <p style="font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                            <i class='bx bx-info-circle' style="color: var(--primary); font-size: 18px;"></i> Por que usar o Banco na Nuvem?
+                        </p>
+                        <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 10px;">
+                            Atualmente, seus dados são salvos apenas neste navegador (LocalStorage). Se você limpar os dados de navegação ou mudar de dispositivo, poderá perder suas informações. Conectando a uma nuvem Supabase gratuita:
+                        </p>
+                        <ul style="color: var(--text-muted); font-size: 13px; padding-left: 20px; margin-bottom: 10px;">
+                            <li>Seus dados de inquilinos e pagamentos ficam guardados em segurança online.</li>
+                            <li>Você pode acessar o painel de qualquer computador ou celular em tempo real.</li>
+                            <li><strong>Migração Automática:</strong> Seus dados locais existentes serão enviados automaticamente ao conectar!</li>
+                        </ul>
+                    </div>
+
+                    <form id="form-cloud-setup" class="modal-form">
+                        <div class="form-group">
+                            <label>URL do Supabase (Project URL)</label>
+                            <input type="text" id="cloud-url" required placeholder="Ex: https://xyzcompany.supabase.co" style="width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); outline: none;">
+                        </div>
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>Chave Pública Anon (Anon API Key)</label>
+                            <input type="password" id="cloud-key" required placeholder="Sua chave pública anon" style="width: 100%; padding: 12px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); outline: none;">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="margin-top: 20px; padding: 12px;">
+                            <i class='bx bx-cloud-upload'></i> Conectar e Sincronizar Dados
+                        </button>
+                    </form>
+
+                    <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
+                        <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--text-main);">Tutorial Rápido: Como Configurar em 2 Minutos</h3>
+                        <ol style="font-size: 13px; color: var(--text-muted); line-height: 1.6; padding-left: 20px;">
+                            <li style="margin-bottom: 8px;">Crie uma conta gratuita em <a href="https://supabase.com" target="_blank" style="color: var(--secondary); text-decoration: underline;">supabase.com</a> e crie um projeto chamado <code>Casas de Aluguel</code>.</li>
+                            <li style="margin-bottom: 8px;">No painel do Supabase, vá em <strong>SQL Editor</strong>, clique em <strong>New Query</strong>, cole o código abaixo e clique em <strong>Run</strong>:</li>
+                        </ol>
+                        
+                        <div style="position: relative; margin: 15px 0;">
+                            <pre style="background: var(--bg-main); padding: 15px; border-radius: 8px; border: 1px solid var(--border); font-family: monospace; font-size: 11px; overflow-x: auto; color: var(--text-muted); max-height: 250px;"><code id="sql-tutorial-code">-- 1. Tabela de Imóveis
+create table if not exists public.lumina_houses (
+    id text primary key,
+    number text not null,
+    tenant text not null,
+    phone text not null,
+    due_day integer not null,
+    start_date text not null,
+    rent_value numeric not null,
+    penalty_pct numeric default 2.00,
+    interest_pct numeric default 0.33,
+    payments jsonb default '[]'::jsonb,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 2. Tabela de Usuários do Sistema
+create table if not exists public.lumina_users (
+    id text primary key,
+    username text unique not null,
+    password text not null,
+    name text not null,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 3. Inserir Usuário Administrador Inicial
+insert into public.lumina_users (id, username, password, name)
+values ('admin_root', 'admin', 'admin', 'Administrador')
+on conflict (username) do nothing;</code></pre>
+                            <button class="btn-icon" id="btn-copy-sql" style="position: absolute; right: 10px; top: 10px; background: var(--bg-panel); padding: 6px; border-radius: 4px; border: 1px solid var(--border);" title="Copiar SQL"><i class='bx bx-copy'></i></button>
+                        </div>
+
+                        <ol start="3" style="font-size: 13px; color: var(--text-muted); line-height: 1.6; padding-left: 20px;">
+                            <li>Vá nas configurações do seu projeto Supabase (ícone de engrenagem) em <strong>API</strong>.</li>
+                            <li>Copie o campo <strong>Project URL</strong> e cole em "URL do Supabase" acima.</li>
+                            <li>Copie a chave <strong>Project API anon key</strong> (chave pública) e cole em "Chave Pública Anon" acima, depois clique no botão de Conectar!</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Estado: Conectado -->
+                <div id="cloud-state-connected" style="display: none;">
+                    <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid var(--success); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 25px;">
+                        <i class='bx bxs-cloud-check' style="font-size: 48px; color: var(--success); margin-bottom: 10px; display: inline-block;"></i>
+                        <h3 style="margin: 0 0 5px 0; color: var(--text-main); font-size: 18px;">Banco de Dados na Nuvem Conectado!</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Sua aplicação está sincronizada em tempo real com a nuvem.</p>
+                    </div>
+
+                    <div style="background: var(--bg-main); border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <p style="font-size: 13px; margin-bottom: 10px; color: var(--text-muted);"><strong>URL do Banco:</strong> <span id="cloud-connected-url" style="color: var(--text-main); font-family: monospace;">---</span></p>
+                        <p style="font-size: 13px; margin-bottom: 0; color: var(--text-muted);"><strong>Última Sincronização:</strong> <span id="cloud-last-sync" style="color: var(--success);">Agora mesmo (Tempo Real)</span></p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <button id="btn-cloud-sync-now" class="btn" style="background-color: var(--primary); color: white; padding: 12px; justify-content: center;">
+                            <i class='bx bx-sync'></i> Forçar Sincronização Manual
+                        </button>
+                        <button id="btn-cloud-disconnect" class="btn btn-icon" style="background-color: var(--danger); color: white; padding: 12px; justify-content: center;">
+                            <i class='bx bx-cloud-off'></i> Desconectar Nuvem (Fallback Local)
+                        </button>
+                    </div>
                 </div>
             </section>
         </main>
@@ -420,7 +532,7 @@
             </div>
 
             <div style="margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Este documento é uma fatura informativa gerada digitalmente pelo sistema Lumina RPM.</p>
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Este documento é uma fatura informativa gerada digitalmente pelo sistema HRC Imóveis.</p>
             </div>
         </div>
     </div>
