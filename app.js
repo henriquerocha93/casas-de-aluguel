@@ -339,9 +339,9 @@ function handleEnergySubmit(e) {
         record.energyTax = tax;
         // Se já estava pago, temos que atualizar o amountPaid total
         if (record.status === 'Pago') {
-            // Recalcula o total baseado no aluguel base + multas ja gravadas + nova energia
+            // Recalcula o total baseado no aluguel base + multas ja gravadas + nova energia + internet
             const baseInvoice = calculateInvoice({...house, payments: house.payments.filter(p => p.month !== month)}, month);
-            record.amountPaid = baseInvoice.baseValue + baseInvoice.penalty + baseInvoice.interest + totalEnergy;
+            record.amountPaid = baseInvoice.baseValue + baseInvoice.penalty + baseInvoice.interest + totalEnergy + baseInvoice.internet;
         }
     } else {
         // Cria um record pendente só pra energia
@@ -868,7 +868,7 @@ function handlePaymentSubmit(e) {
         payments: [] // Calcula fingindo q nao ta pago
     }, month);
     
-    const amountPaid = tempInvoice.baseValue + tempInvoice.penalty + tempInvoice.interest + energyVal;
+    const amountPaid = tempInvoice.baseValue + tempInvoice.penalty + tempInvoice.interest + energyVal + tempInvoice.internet;
     
     // Remove if exist
     house.payments = house.payments.filter(p => p.month !== month);
