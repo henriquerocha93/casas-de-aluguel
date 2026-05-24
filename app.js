@@ -1131,14 +1131,29 @@ function handleWhatsAppSend() {
 }
 
 function fillPdfTemplate(house, invoice, pixCode, monthStr) {
-    document.getElementById('pdf-current-date').textContent = formatDate(new Date());
+    document.getElementById('pdf-current-date').textContent = new Date().toLocaleDateString('pt-BR');
     document.getElementById('pdf-tenant-name').textContent = house.tenant;
     document.getElementById('pdf-house-number').textContent = house.number;
+    document.getElementById('pdf-house-address').textContent = house.address || 'Endereço não cadastrado';
+    document.getElementById('pdf-house-cep').textContent = house.cep || 'CEP não cadastrado';
     document.getElementById('pdf-month-ref').textContent = monthStr;
     document.getElementById('pdf-due-date').textContent = formatDate(invoice.dueDate);
     document.getElementById('pdf-total-value').textContent = formatCurrency(invoice.total);
     document.getElementById('pdf-pix-qrcode').src = document.getElementById('pix-qrcode').src;
     document.getElementById('pdf-pix-code').textContent = pixCode;
+
+    // Gerar Hash de Autenticação Digital
+    const timestamp = new Date().getTime();
+    const hashStr = (house.id + house.tenant + monthStr + timestamp).replace(/\s/g, '').toUpperCase();
+    let hash = 0;
+    for (let i = 0; i < hashStr.length; i++) {
+        hash = ((hash << 5) - hash) + hashStr.charCodeAt(i);
+        hash = hash & hash; 
+    }
+    const finalHash = Math.abs(hash).toString(16).toUpperCase().padStart(8, '0') + '-' + timestamp.toString(36).toUpperCase();
+    document.getElementById('pdf-auth-hash').textContent = finalHash;
+    const now = new Date();
+    document.getElementById('pdf-gen-time').textContent = `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
 
     const itemsList = document.getElementById('pdf-items-list');
     itemsList.innerHTML = `
