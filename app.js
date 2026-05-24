@@ -568,7 +568,6 @@ function renderTable() {
                 </div>
             </div>
         `;
-        `;
         
         const addrKey = house.address ? `${house.address}${house.cep ? ' (CEP: '+house.cep+')' : ''}` : 'Endereço Não Informado';
         if (!groups[addrKey]) groups[addrKey] = [];
