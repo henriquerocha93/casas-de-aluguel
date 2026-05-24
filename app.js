@@ -150,7 +150,10 @@ function calculateInvoice(house, monthStr) {
     let energyTax = existingRecord && existingRecord.energyTax ? parseFloat(existingRecord.energyTax) : 0;
     let energyKwh = existingRecord && existingRecord.energyKwh ? parseFloat(existingRecord.energyKwh) : 0;
     let energyPrice = existingRecord && existingRecord.energyPrice ? parseFloat(existingRecord.energyPrice) : 0.95;
-    let total = baseValue + energy;
+    
+    let internet = house.hasInternet ? parseFloat(house.internetValue || 0) : 0;
+    
+    let total = baseValue + energy + internet;
     
     if (existingRecord && existingRecord.status === 'Pago') {
         return {
@@ -161,6 +164,7 @@ function calculateInvoice(house, monthStr) {
             energyTax,
             energyKwh,
             energyPrice,
+            internet,
             penalty: 0,
             interest: 0,
             total: parseFloat(existingRecord.amountPaid),
@@ -185,11 +189,11 @@ function calculateInvoice(house, monthStr) {
 
         penalty = baseValue * pRate;
         interest = baseValue * iRate * diffDays;
-        total = baseValue + energy + penalty + interest;
+        total = baseValue + energy + internet + penalty + interest;
     }
     
     return {
-        status, dueDate, baseValue, energy, energyTax, energyKwh, energyPrice, penalty, interest, total
+        status, dueDate, baseValue, energy, energyTax, energyKwh, energyPrice, internet, penalty, interest, total
     };
 }
 
@@ -216,6 +220,7 @@ function switchSection(section) {
     const chart = document.getElementById('chart-section');
     const table = document.querySelector('.table-section');
     const luz = document.getElementById('luz-section');
+    const internet = document.getElementById('internet-section');
     const users = document.getElementById('users-section');
     const headerRight = document.querySelector('.header-right');
 
@@ -227,6 +232,7 @@ function switchSection(section) {
     if (chart) chart.style.display = 'none';
     table.style.display = 'none';
     luz.style.display = 'none';
+    if (internet) internet.style.display = 'none';
     users.style.display = 'none';
     headerRight.style.display = 'none';
     
@@ -249,6 +255,11 @@ function switchSection(section) {
         luz.style.display = 'block';
         document.getElementById('menu-luz-link').parentElement.classList.add('active');
         document.getElementById('page-title').textContent = 'Controle de Energia';
+    } else if (section === 'internet') {
+        if (internet) internet.style.display = 'block';
+        document.getElementById('menu-internet-link').parentElement.classList.add('active');
+        document.getElementById('page-title').textContent = 'Internet Social';
+        renderInternetTable();
     } else if (section === 'users') {
         users.style.display = 'block';
         document.getElementById('menu-users-link').parentElement.classList.add('active');
@@ -352,6 +363,63 @@ function handleEnergySubmit(e) {
 }
 
 // ==========================
+// INTERNET SOCIAL
+// ==========================
+
+function renderInternetTable() {
+    const tbody = document.getElementById('internet-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    houses.forEach(house => {
+        const hasInternet = house.hasInternet || false;
+        const internetVal = house.internetValue || 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${house.number}</strong></td>
+            <td>${house.tenant}</td>
+            <td>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" onchange="toggleInternet('${house.id}', this.checked)" ${hasInternet ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+                    <span>${hasInternet ? 'Sim' : 'Não'}</span>
+                </label>
+            </td>
+            <td>
+                <input type="number" step="0.01" value="${internetVal}" onchange="updateInternetValue('${house.id}', this.value)" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main); width: 100px;" ${!hasInternet ? 'disabled' : ''}>
+            </td>
+            <td>
+                <span class="badge ${hasInternet ? 'badge-Pago' : 'badge-Pendente'}">${hasInternet ? 'Ativa' : 'Inativa'}</span>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function toggleInternet(houseId, isChecked) {
+    const house = houses.find(h => h.id === houseId);
+    if (house) {
+        house.hasInternet = isChecked;
+        if (isChecked && (!house.internetValue || house.internetValue === 0)) {
+            house.internetValue = 50; // default initial value
+        }
+        saveHousesToCloud();
+        renderApp();
+        renderInternetTable();
+    }
+}
+
+function updateInternetValue(houseId, val) {
+    const house = houses.find(h => h.id === houseId);
+    if (house) {
+        house.internetValue = parseFloat(val) || 0;
+        saveHousesToCloud();
+        renderApp();
+        // não precisa renderizar a tabela inteira, mas garante atualizar o estado.
+    }
+}
+
+// ==========================
 // TABELA E DASHBOARD
 // ==========================
 
@@ -410,8 +478,8 @@ function renderTable() {
                 
                 <div class="hc-finance">
                     <div class="hc-finance-item">
-                        <small>Aluguel + Luz</small>
-                        <strong>${formatCurrency(invoice.baseValue)} ${invoice.energy > 0 ? `+ ${formatCurrency(invoice.energy)}` : ''}</strong>
+                        <small>Aluguel${invoice.energy > 0 ? ' + Luz' : ''}${invoice.internet > 0 ? ' + Net' : ''}</small>
+                        <strong>${formatCurrency(invoice.baseValue)} ${invoice.energy > 0 ? `+ ${formatCurrency(invoice.energy)}` : ''} ${invoice.internet > 0 ? `+ ${formatCurrency(invoice.internet)}` : ''}</strong>
                     </div>
                     <div class="hc-finance-item total">
                         <small>Total Final</small>
@@ -555,6 +623,7 @@ function setupEventListeners() {
     document.getElementById('menu-dashboard-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('dashboard'); });
     document.getElementById('menu-houses-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('imoveis'); }); 
     document.getElementById('menu-luz-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('luz'); });
+    document.getElementById('menu-internet-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('internet'); });
     document.getElementById('menu-users-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('users'); });
     document.getElementById('btn-logout').addEventListener('click', logout);
 
@@ -918,6 +987,7 @@ function handleWhatsAppSend() {
     
     if (invoice.penalty > 0) message += `⚠ *Multa:* ${formatCurrency(invoice.penalty)}\n`;
     if (invoice.interest > 0) message += `📈 *Juros Diários:* ${formatCurrency(invoice.interest)}\n`;
+    if (invoice.internet > 0) message += `🌐 *Internet Social:* ${formatCurrency(invoice.internet)}\n`;
     message += `\n💵 *TOTAL A PAGAR:* *${formatCurrency(invoice.total)}*\n\n`;
     message += `🏦 *DADOS PARA PAGAMENTO (PIX):*\n`;
     message += `Fav: Henrique Rocha Clavijo\n`;
@@ -1008,6 +1078,9 @@ function fillPdfTemplate(house, invoice, pixCode, monthStr) {
     }
     if (invoice.interest > 0) {
         itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #ef4444;">Juros Diários</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px; color: #ef4444;">${formatCurrency(invoice.interest)}</td></tr>`;
+    }
+    if (invoice.internet > 0) {
+        itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">Internet Social</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(invoice.internet)}</td></tr>`;
     }
 }
 
