@@ -234,11 +234,17 @@ function switchSection(section) {
 
     if (section === 'dashboard') {
         dashboard.style.display = 'grid';
-        if (chart) chart.style.display = 'block';
-        table.style.display = 'block';
-        headerRight.style.display = 'block';
+        if (chart) chart.style.display = 'grid';
+        // Hide new house button on dashboard, or show it? Let's leave it hidden, so user has to go to Imóveis to add.
+        // Actually, let's keep headerRight visible just in case, but Imóveis makes more sense.
+        // We'll hide table and headerRight for dashboard.
         document.getElementById('menu-dashboard-link').parentElement.classList.add('active');
         document.getElementById('page-title').textContent = 'Dashboard Financeiro';
+    } else if (section === 'imoveis') {
+        table.style.display = 'block';
+        headerRight.style.display = 'block';
+        document.getElementById('menu-houses-link').parentElement.classList.add('active');
+        document.getElementById('page-title').textContent = 'Seus Imóveis';
     } else if (section === 'luz') {
         luz.style.display = 'block';
         document.getElementById('menu-luz-link').parentElement.classList.add('active');
@@ -547,7 +553,7 @@ function setupEventListeners() {
     
     // Menu links
     document.getElementById('menu-dashboard-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('dashboard'); });
-    document.getElementById('menu-houses-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('dashboard'); }); 
+    document.getElementById('menu-houses-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('imoveis'); }); 
     document.getElementById('menu-luz-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('luz'); });
     document.getElementById('menu-users-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('users'); });
     document.getElementById('btn-logout').addEventListener('click', logout);
