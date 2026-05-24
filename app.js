@@ -798,7 +798,7 @@ function handleWhatsAppSend() {
         const baseEnergy = invoice.energy - invoice.energyTax;
         if (baseEnergy > 0) {
             if (invoice.energyKwh > 0 && invoice.energyPrice > 0) {
-                message += `⚡ *Energia (${invoice.energyKwh} kWh x R$ ${invoice.energyPrice.toFixed(2)}):* ${formatCurrency(baseEnergy)}\n`;
+                message += `⚡ *Energia (${invoice.energyKwh} kWh):* ${formatCurrency(baseEnergy)}\n`;
             } else {
                 message += `⚡ *Energia:* ${formatCurrency(baseEnergy)}\n`;
             }
@@ -884,7 +884,7 @@ function fillPdfTemplate(house, invoice, pixCode, monthStr) {
         if (baseEnergy > 0) {
             let energyDesc = "Consumo de Energia (Luz)";
             if (invoice.energyKwh > 0 && invoice.energyPrice > 0) {
-                energyDesc += ` - ${invoice.energyKwh} kWh x R$ ${invoice.energyPrice.toFixed(2)}`;
+                energyDesc += ` - ${invoice.energyKwh} kWh`;
             }
             itemsList.innerHTML += `<tr><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">${energyDesc}</td><td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(baseEnergy)}</td></tr>`;
         }
