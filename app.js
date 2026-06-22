@@ -659,6 +659,21 @@ function updateDashboard() {
     renderChart();
 }
 
+function updateAddressDatalist() {
+    const dataList = document.getElementById('address-suggestions');
+    if (!dataList) return;
+    dataList.innerHTML = '';
+    
+    // Get unique addresses
+    const uniqueAddresses = [...new Set(houses.map(h => h.address).filter(a => a && a.trim() !== ''))];
+    
+    uniqueAddresses.forEach(address => {
+        const option = document.createElement('option');
+        option.value = address;
+        dataList.appendChild(option);
+    });
+}
+
 // ==========================
 // EVENTOS E MODAIS
 // ==========================
@@ -668,7 +683,19 @@ function setupEventListeners() {
         document.getElementById('form-house').reset();
         document.getElementById('house-id').value = '';
         document.getElementById('modal-house-title').textContent = "Cadastrar Imóvel";
+        updateAddressDatalist();
         document.getElementById('modal-house').classList.add('active');
+    });
+
+    document.getElementById('house-address').addEventListener('change', (e) => {
+        const address = e.target.value;
+        if (!address) return;
+        
+        // Find if any house has this address and a CEP
+        const existingHouse = houses.find(h => h.address === address && h.cep && h.cep.trim() !== '');
+        if (existingHouse) {
+            document.getElementById('house-cep').value = existingHouse.cep;
+        }
     });
 
     document.getElementById('close-modal-house').addEventListener('click', () => {
@@ -843,6 +870,7 @@ function editHouse(id) {
     document.getElementById('interest-pct').value = house.interestPct !== undefined && house.interestPct !== null && !isNaN(house.interestPct) ? house.interestPct : "0.33";
     
     document.getElementById('modal-house-title').textContent = "Editar Imóvel";
+    updateAddressDatalist();
     document.getElementById('modal-house').classList.add('active');
 }
 
