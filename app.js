@@ -216,8 +216,7 @@ function saveData() {
 }
 
 function switchSection(section) {
-    const dashboard = document.getElementById('dashboard-section');
-    const chart = document.getElementById('chart-section');
+    const dashboardWrapper = document.getElementById('dashboard-wrapper');
     const table = document.querySelector('.table-section');
     const luz = document.getElementById('luz-section');
     const internet = document.getElementById('internet-section');
@@ -228,8 +227,7 @@ function switchSection(section) {
     document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
     
     // Esconder tudo
-    dashboard.style.display = 'none';
-    if (chart) chart.style.display = 'none';
+    if (dashboardWrapper) dashboardWrapper.style.display = 'none';
     table.style.display = 'none';
     luz.style.display = 'none';
     if (internet) internet.style.display = 'none';
@@ -239,8 +237,7 @@ function switchSection(section) {
     document.getElementById('page-title').textContent = section.charAt(0).toUpperCase() + section.slice(1);
 
     if (section === 'dashboard') {
-        dashboard.style.display = 'grid';
-        if (chart) chart.style.display = 'grid';
+        if (dashboardWrapper) dashboardWrapper.style.display = 'block';
         // Hide new house button on dashboard, or show it? Let's leave it hidden, so user has to go to Imóveis to add.
         // Actually, let's keep headerRight visible just in case, but Imóveis makes more sense.
         // We'll hide table and headerRight for dashboard.
@@ -609,6 +606,10 @@ function updateDashboard() {
     let totalRecebido = 0;
     let totalAtraso = 0;
     let totalFaturamento = 0;
+    let compAluguel = 0;
+    let compLuz = 0;
+    let compInternet = 0;
+    let compMultas = 0;
     let lateAlertsHtml = "";
     
     const filterSelect = document.getElementById('dashboard-month-filter');
@@ -617,6 +618,10 @@ function updateDashboard() {
     houses.forEach(house => {
         const invoice = calculateInvoice(house, filterMonth);
         totalFaturamento += invoice.total;
+        compAluguel += invoice.baseValue;
+        compLuz += invoice.energy;
+        compInternet += invoice.internet;
+        compMultas += invoice.penalty + invoice.interest;
         
         if (invoice.status === 'Pago') {
             totalRecebido += invoice.total;
@@ -664,6 +669,11 @@ function updateDashboard() {
     document.getElementById('val-receber').textContent = formatCurrency(totalReceber);
     document.getElementById('val-recebido').textContent = formatCurrency(totalRecebido);
     document.getElementById('val-atraso').textContent = formatCurrency(totalAtraso);
+    
+    if (document.getElementById('val-comp-aluguel')) document.getElementById('val-comp-aluguel').textContent = formatCurrency(compAluguel);
+    if (document.getElementById('val-comp-luz')) document.getElementById('val-comp-luz').textContent = formatCurrency(compLuz);
+    if (document.getElementById('val-comp-internet')) document.getElementById('val-comp-internet').textContent = formatCurrency(compInternet);
+    if (document.getElementById('val-comp-multas')) document.getElementById('val-comp-multas').textContent = formatCurrency(compMultas);
     
     const alertsList = document.getElementById('alerts-list');
     if (lateAlertsHtml === "") {

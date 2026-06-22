@@ -54,16 +54,21 @@
                     <p class="date-display" id="current-date">Carregando data...</p>
                 </div>
                 <div class="header-right">
-                    <select id="dashboard-month-filter" class="header-select" style="margin-right: 10px;">
-                        <!-- JS vai preencher -->
-                    </select>
                     <button class="btn btn-primary" id="btn-new-house">
                         <i class='bx bx-plus'></i> Novo Imóvel
                     </button>
                 </div>
             </header>
 
-            <section class="dashboard-cards" id="dashboard-section">
+            <div id="dashboard-wrapper">
+                <div class="dashboard-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; font-size: 18px; color: var(--text-main);">Visão Geral do Mês</h2>
+                    <select id="dashboard-month-filter" class="header-select">
+                        <!-- JS vai preencher -->
+                    </select>
+                </div>
+
+                <section class="dashboard-cards" id="dashboard-section">
                 <div class="card card-faturamento">
                     <div class="card-icon"><i class='bx bx-bar-chart-alt-2'></i></div>
                     <div class="card-info">
@@ -94,6 +99,26 @@
                 </div>
             </section>
 
+            <!-- Composição do Faturamento -->
+            <section class="dashboard-breakdown" id="breakdown-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                <div class="box-panel" style="padding: 15px;">
+                    <h4 style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class='bx bx-home'></i> Aluguel Mensal</h4>
+                    <p style="font-size:20px; font-weight:700; color:var(--text-main);" id="val-comp-aluguel">R$ 0,00</p>
+                </div>
+                <div class="box-panel" style="padding: 15px;">
+                    <h4 style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class='bx bx-bulb'></i> Energia (Luz)</h4>
+                    <p style="font-size:20px; font-weight:700; color:var(--text-main);" id="val-comp-luz">R$ 0,00</p>
+                </div>
+                <div class="box-panel" style="padding: 15px;">
+                    <h4 style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class='bx bx-wifi'></i> Internet Social</h4>
+                    <p style="font-size:20px; font-weight:700; color:var(--text-main);" id="val-comp-internet">R$ 0,00</p>
+                </div>
+                <div class="box-panel" style="padding: 15px;">
+                    <h4 style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class='bx bx-error'></i> Multas e Juros</h4>
+                    <p style="font-size:20px; font-weight:700; color:var(--text-main);" id="val-comp-multas">R$ 0,00</p>
+                </div>
+            </section>
+
             <!-- Grafico e Lista de Atrasos -->
             <section class="dashboard-grid" id="chart-section">
                 <div class="chart-container box-panel">
@@ -109,6 +134,7 @@
                     </ul>
                 </div>
             </section>
+            </div>
 
             <section class="table-section box-panel">
                 <div class="table-header">
