@@ -54,6 +54,9 @@
                     <p class="date-display" id="current-date">Carregando data...</p>
                 </div>
                 <div class="header-right">
+                    <select id="dashboard-month-filter" class="header-select" style="margin-right: 10px;">
+                        <!-- JS vai preencher -->
+                    </select>
                     <button class="btn btn-primary" id="btn-new-house">
                         <i class='bx bx-plus'></i> Novo Imóvel
                     </button>
@@ -61,10 +64,17 @@
             </header>
 
             <section class="dashboard-cards" id="dashboard-section">
+                <div class="card card-faturamento">
+                    <div class="card-icon"><i class='bx bx-bar-chart-alt-2'></i></div>
+                    <div class="card-info">
+                        <h3>Faturamento (Mês)</h3>
+                        <p class="card-value" id="val-faturamento">R$ 0,00</p>
+                    </div>
+                </div>
                 <div class="card card-receber">
                     <div class="card-icon"><i class='bx bx-dollar-circle'></i></div>
                     <div class="card-info">
-                        <h3>A Receber (Mês)</h3>
+                        <h3>A Receber</h3>
                         <p class="card-value" id="val-receber">R$ 0,00</p>
                     </div>
                 </div>

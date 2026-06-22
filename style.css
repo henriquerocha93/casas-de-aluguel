@@ -203,6 +203,7 @@ header {
 .card-receber .card-icon { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
 .card-recebido .card-icon { background: var(--success-bg); color: var(--success); }
 .card-atraso .card-icon { background: var(--danger-bg); color: var(--danger); }
+.card-faturamento .card-icon { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
 
 .card-info h3 {
     font-size: 14px;

@@ -608,12 +608,15 @@ function updateDashboard() {
     let totalReceber = 0;
     let totalRecebido = 0;
     let totalAtraso = 0;
+    let totalFaturamento = 0;
     let lateAlertsHtml = "";
     
-    const filterMonth = getCurrentMonthStr(); // Dashboard sempre baseia no mes atual e atrasos gerais
+    const filterSelect = document.getElementById('dashboard-month-filter');
+    const filterMonth = filterSelect && filterSelect.value ? filterSelect.value : getCurrentMonthStr();
     
     houses.forEach(house => {
         const invoice = calculateInvoice(house, filterMonth);
+        totalFaturamento += invoice.total;
         
         if (invoice.status === 'Pago') {
             totalRecebido += invoice.total;
@@ -657,6 +660,7 @@ function updateDashboard() {
         }
     });
     
+    if (document.getElementById('val-faturamento')) document.getElementById('val-faturamento').textContent = formatCurrency(totalFaturamento);
     document.getElementById('val-receber').textContent = formatCurrency(totalReceber);
     document.getElementById('val-recebido').textContent = formatCurrency(totalRecebido);
     document.getElementById('val-atraso').textContent = formatCurrency(totalAtraso);
@@ -764,6 +768,7 @@ function setupEventListeners() {
     document.getElementById('btn-logout').addEventListener('click', logout);
 
     document.getElementById('luz-month-filter').addEventListener('change', renderLuzTable);
+    if(document.getElementById('dashboard-month-filter')) document.getElementById('dashboard-month-filter').addEventListener('change', updateDashboard);
     
     document.getElementById('close-modal-share').addEventListener('click', () => {
         document.getElementById('modal-share').classList.remove('active');
@@ -1000,6 +1005,7 @@ function updateDateDisplay() {
 function populateMonthFilter() {
     const select = document.getElementById('month-filter');
     const selectLuz = document.getElementById('luz-month-filter');
+    const selectDashboard = document.getElementById('dashboard-month-filter');
     const today = new Date();
     let currentY = today.getFullYear();
     let currentM = today.getMonth() + 1; // 1-12
@@ -1016,13 +1022,16 @@ function populateMonthFilter() {
         option.textContent = labelStr;
         
         const optionLuz = option.cloneNode(true);
+        const optionDashboard = option.cloneNode(true);
 
         if (i === 0) {
             option.selected = true;
             optionLuz.selected = true;
+            optionDashboard.selected = true;
         }
         select.appendChild(option);
         selectLuz.appendChild(optionLuz);
+        if(selectDashboard) selectDashboard.appendChild(optionDashboard);
     }
 }
 
