@@ -340,9 +340,15 @@ on conflict (username) do nothing;</code></pre>
                     <label>Nome do Inquilino</label>
                     <input type="text" id="tenant-name" required placeholder="Ex: João da Silva">
                 </div>
-                <div class="form-group">
-                    <label>Telefone / WhatsApp</label>
-                    <input type="text" id="tenant-phone" required placeholder="(00) 00000-0000">
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label>Telefone / WhatsApp</label>
+                        <input type="text" id="tenant-phone" required placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="form-group">
+                        <label>CPF do Morador</label>
+                        <input type="text" id="tenant-cpf" placeholder="000.000.000-00">
+                    </div>
                 </div>
                 <div class="form-group-row">
                     <div class="form-group" style="flex: 2;">
@@ -519,6 +525,7 @@ on conflict (username) do nothing;</code></pre>
                 <div>
                     <h3 style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Locatário</h3>
                     <p style="font-weight: 700; margin: 0; font-size: 16px;"><span id="pdf-tenant-name"></span></p>
+                    <p style="margin: 4px 0 0 0; font-size: 14px;">CPF: <span id="pdf-tenant-cpf"></span></p>
                     <p style="margin: 4px 0 0 0; font-size: 14px;">Imóvel: <span id="pdf-house-number"></span></p>
                     <p style="margin: 4px 0 0 0; font-size: 14px;">Endereço: <span id="pdf-house-address"></span></p>
                     <p style="margin: 4px 0 0 0; font-size: 14px;">CEP: <span id="pdf-house-cep"></span></p>

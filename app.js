@@ -839,6 +839,7 @@ function handleHouseSubmit(e) {
     const houseData = {
         number: document.getElementById('house-number').value,
         tenant: document.getElementById('tenant-name').value,
+        cpf: document.getElementById('tenant-cpf') ? document.getElementById('tenant-cpf').value.trim() : '',
         phone: document.getElementById('tenant-phone').value,
         address: document.getElementById('house-address') ? document.getElementById('house-address').value.trim() : '',
         cep: document.getElementById('house-cep') ? document.getElementById('house-cep').value.trim() : '',
@@ -882,6 +883,7 @@ function editHouse(id) {
     document.getElementById('house-id').value = house.id;
     document.getElementById('house-number').value = house.number;
     document.getElementById('tenant-name').value = house.tenant;
+    if (document.getElementById('tenant-cpf')) document.getElementById('tenant-cpf').value = house.cpf || '';
     document.getElementById('tenant-phone').value = house.phone;
     if (document.getElementById('house-address')) document.getElementById('house-address').value = house.address || '';
     if (document.getElementById('house-cep')) document.getElementById('house-cep').value = house.cep || '';
@@ -1183,6 +1185,7 @@ function handleWhatsAppSend() {
 function fillPdfTemplate(house, invoice, pixCode, monthStr) {
     document.getElementById('pdf-current-date').textContent = new Date().toLocaleDateString('pt-BR');
     document.getElementById('pdf-tenant-name').textContent = house.tenant;
+    if (document.getElementById('pdf-tenant-cpf')) document.getElementById('pdf-tenant-cpf').textContent = house.cpf || 'Não informado';
     document.getElementById('pdf-house-number').textContent = house.number;
     document.getElementById('pdf-house-address').textContent = house.address || 'Endereço não cadastrado';
     document.getElementById('pdf-house-cep').textContent = house.cep || 'CEP não cadastrado';
