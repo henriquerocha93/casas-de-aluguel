@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <meta name="description" content="CRM de Controle Financeiro de Casas de Aluguel">
 </head>
 <body>
@@ -28,6 +29,7 @@
                 <li><a href="#" id="menu-houses-link"><i class='bx bx-home'></i> Imóveis</a></li>
                 <li><a href="#" id="menu-luz-link"><i class='bx bx-bulb'></i> Luz</a></li>
                 <li><a href="#" id="menu-internet-link"><i class='bx bx-wifi'></i> Internet</a></li>
+                <li><a href="#" id="menu-contratos-link"><i class='bx bx-file'></i> Contratos</a></li>
                 <li><a href="#" id="menu-users-link"><i class='bx bx-group'></i> Usuários</a></li>
             </ul>
             <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid var(--border); margin-top: auto;">
@@ -179,6 +181,29 @@
                             </tr>
                         </thead>
                         <tbody id="users-tbody">
+                            <!-- Injetado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Seção de Contratos -->
+            <section id="contratos-section" style="display: none;">
+                <div class="table-header">
+                    <h2>Contratos de Locação</h2>
+                </div>
+                <div class="table-container box-panel">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Imóvel</th>
+                                <th>Inquilino</th>
+                                <th>Data Início</th>
+                                <th>Status do Arquivo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contratos-tbody">
                             <!-- Injetado via JS -->
                         </tbody>
                     </table>
@@ -541,6 +566,67 @@ on conflict (username) do nothing;</code></pre>
                     <button id="btn-whatsapp-confirm" class="btn" style="background-color: #25D366; color: white;">
                         <i class='bx bxl-whatsapp'></i> WhatsApp
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template do Contrato em PDF (Oculto) -->
+    <div id="contract-pdf-template" style="display: none; position: absolute; left: -9999px;">
+        <div style="width: 800px; padding: 40px; font-family: 'Times New Roman', Times, serif; color: #000; background: #fff; line-height: 1.6;">
+            <h1 style="text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 30px; text-decoration: underline;">CONTRATO PARTICULAR DE LOCAÇÃO RESIDENCIAL</h1>
+            
+            <p><strong>LOCADOR:</strong> Henrique Rocha Clavijo, CPF nº 852.216.190-91.</p>
+            <p><strong>LOCATÁRIO:</strong> <span id="contract-tenant-name"></span>, CPF nº <span id="contract-tenant-cpf"></span>.</p>
+            
+            <p>As partes acima identificadas celebram o presente Contrato Particular de Locação Residencial, mediante as cláusulas e condições seguintes:</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 1 – DO IMÓVEL</h2>
+            <p>O LOCADOR dá em locação ao LOCATÁRIO o imóvel residencial denominado <strong id="contract-house-name"></strong>, situado na <strong id="contract-house-address"></strong>, em Porto Alegre/RS.</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 2 – DO PRAZO</h2>
+            <p>O prazo da locação será de <strong>06 (seis) meses</strong>, com início em <strong id="contract-start-date"></strong> e término em <strong id="contract-end-date"></strong>, independentemente de aviso prévio.</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 3 – DO VALOR DO ALUGUEL</h2>
+            <p>O valor mensal do aluguel será aquele ajustado entre as partes, devendo ser pago na forma e datas acordadas.</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 4 – DAS DESPESAS DE CONSUMO</h2>
+            <p>O LOCATÁRIO será responsável pelo pagamento integral das despesas de consumo geradas durante a locação, incluindo energia elétrica, água, internet e demais serviços que utilizar.</p>
+            <p>Ao término da locação, o LOCATÁRIO deverá apresentar comprovante de quitação da conta de energia elétrica referente ao período de ocupação do imóvel.</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 5 – DA RESCISÃO ANTECIPADA</h2>
+            <p>Caso o LOCATÁRIO rescinda o presente contrato antes do término previsto na Cláusula 2, ficará obrigado ao pagamento:</p>
+            <p>a) dos alugueis correspondentes aos meses restantes até o término do contrato; e<br>
+            b) de multa contratual equivalente a 01 (um) aluguel mensal vigente à época da rescisão.</p>
+            <p>O pagamento deverá ser efetuado antes da entrega das chaves.</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 6 – DA CONSERVAÇÃO E ENTREGA DO IMÓVEL</h2>
+            <p>O LOCATÁRIO declara receber o imóvel em perfeitas condições de uso e conservação, conforme vistoria realizada.</p>
+            <p>Ao término da locação, o imóvel deverá ser devolvido nas mesmas condições em que foi recebido, ressalvado o desgaste natural decorrente do uso normal.</p>
+            <p>Eventuais danos constatados serão de responsabilidade do LOCATÁRIO, que deverá repará-los ou indenizar o LOCADOR pelos respectivos custos.</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 7 – DA VISTORIA</h2>
+            <p>A vistoria inicial integra o presente contrato para todos os fins de direito, servindo como referência para a devolução do imóvel.</p>
+
+            <h2 style="font-size: 16px; margin-top: 20px;">CLÁUSULA 8 – DO FORO</h2>
+            <p>Fica eleito o foro da Comarca de Porto Alegre/RS para dirimir quaisquer dúvidas ou controvérsias oriundas deste contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
+
+            <p style="margin-top: 20px;">E, por estarem justos e contratados, firmam o presente instrumento em duas vias de igual teor e forma.</p>
+
+            <p style="margin-top: 40px; margin-bottom: 60px;">Porto Alegre/RS, <span id="contract-current-date"></span>.</p>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 60px; text-align: center;">
+                <div style="width: 45%;">
+                    <hr style="border-top: 1px solid #000; margin-bottom: 5px;">
+                    <p style="margin: 0; font-weight: bold;">HENRIQUE ROCHA CLAVIJO</p>
+                    <p style="margin: 0;">Locador</p>
+                    <p style="margin: 0;">CPF: 852.216.190-91</p>
+                </div>
+                <div style="width: 45%;">
+                    <hr style="border-top: 1px solid #000; margin-bottom: 5px;">
+                    <p style="margin: 0; font-weight: bold; text-transform: uppercase;" id="contract-sign-tenant-name"></p>
+                    <p style="margin: 0;">Locatário</p>
+                    <p style="margin: 0;">CPF: <span id="contract-sign-tenant-cpf"></span></p>
                 </div>
             </div>
         </div>

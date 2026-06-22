@@ -28,6 +28,7 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const database = firebase.database();
+const storage = firebase.storage();
 
 let houses = [];
 let systemUsers = [];
@@ -220,6 +221,7 @@ function switchSection(section) {
     const table = document.querySelector('.table-section');
     const luz = document.getElementById('luz-section');
     const internet = document.getElementById('internet-section');
+    const contratos = document.getElementById('contratos-section');
     const users = document.getElementById('users-section');
     const headerRight = document.querySelector('.header-right');
 
@@ -231,6 +233,7 @@ function switchSection(section) {
     table.style.display = 'none';
     luz.style.display = 'none';
     if (internet) internet.style.display = 'none';
+    if (contratos) contratos.style.display = 'none';
     users.style.display = 'none';
     headerRight.style.display = 'none';
     
@@ -261,6 +264,11 @@ function switchSection(section) {
         users.style.display = 'block';
         document.getElementById('menu-users-link').parentElement.classList.add('active');
         document.getElementById('page-title').textContent = 'Gestão de Usuários';
+    } else if (section === 'contratos') {
+        if (contratos) contratos.style.display = 'block';
+        document.getElementById('menu-contratos-link').parentElement.classList.add('active');
+        document.getElementById('page-title').textContent = 'Contratos de Locação';
+        renderContractsTable();
     }
 }
 function renderLuzTable() {
@@ -419,6 +427,112 @@ function updateInternetValue(houseId, val) {
         renderApp();
         // não precisa renderizar a tabela inteira, mas garante atualizar o estado.
     }
+}
+
+// ==========================
+// CONTRATOS
+// ==========================
+function renderContractsTable() {
+    const tbody = document.getElementById('contratos-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    houses.forEach(house => {
+        const tr = document.createElement('tr');
+        
+        // Calculate contract dates
+        const start = house.startDate ? new Date(house.startDate + 'T12:00:00') : new Date();
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + 6);
+        const startStr = formatDate(start);
+        
+        const hasContract = !!house.contractUrl;
+        const statusBadge = hasContract ? `<span class="badge badge-Pago">Anexado</span>` : `<span class="badge badge-Pendente">Pendente</span>`;
+        
+        tr.innerHTML = `
+            <td><strong>${house.number}</strong></td>
+            <td>${house.tenant || 'Não informado'}</td>
+            <td>${startStr}</td>
+            <td>${statusBadge}</td>
+            <td>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-icon" style="color: var(--primary);" onclick="generateContractPDF('${house.id}')" title="Gerar Modelo PDF"><i class='bx bx-file-blank'></i></button>
+                    <label class="btn-icon" style="color: var(--secondary); cursor: pointer; margin: 0;" title="Anexar Contrato Assinado">
+                        <i class='bx bx-upload'></i>
+                        <input type="file" style="display: none;" accept="application/pdf" onchange="handleUploadContract('${house.id}', this)">
+                    </label>
+                    ${hasContract ? `<button class="btn-icon" style="color: var(--success);" onclick="window.open('${house.contractUrl}', '_blank')" title="Ver Contrato"><i class='bx bx-link-external'></i></button>` : ''}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function generateContractPDF(houseId) {
+    const house = houses.find(h => h.id === houseId);
+    if (!house) return;
+
+    // Dates
+    const start = house.startDate ? new Date(house.startDate + 'T12:00:00') : new Date();
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 6);
+    
+    document.getElementById('contract-tenant-name').textContent = house.tenant || '___________________';
+    document.getElementById('contract-tenant-cpf').textContent = house.cpf || '___________________';
+    document.getElementById('contract-house-name').textContent = house.number || '___________________';
+    document.getElementById('contract-house-address').textContent = house.address || '___________________';
+    
+    document.getElementById('contract-start-date').textContent = start.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('contract-end-date').textContent = end.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    document.getElementById('contract-current-date').textContent = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('contract-sign-tenant-name').textContent = house.tenant || 'LOCATÁRIO';
+    document.getElementById('contract-sign-tenant-cpf').textContent = house.cpf || '___________________';
+
+    const template = document.getElementById('contract-pdf-template');
+    const element = template.cloneNode(true);
+    element.style.display = 'block';
+    element.style.position = 'static';
+
+    const opt = {
+        margin:       0,
+        filename:     `Contrato_${house.number.replace(/\s+/g, '_')}_${house.tenant.replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        alert('Modelo de contrato gerado e baixado com sucesso!');
+    });
+}
+
+function handleUploadContract(houseId, fileInput) {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const house = houses.find(h => h.id === houseId);
+    if (!house) return;
+
+    const storageRef = storage.ref();
+    const contractRef = storageRef.child(`contracts/${houseId}_${Date.now()}.pdf`);
+
+    // Feedback visual
+    fileInput.parentElement.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i>`;
+
+    contractRef.put(file).then((snapshot) => {
+        snapshot.ref.getDownloadURL().then((url) => {
+            house.contractUrl = url;
+            saveHousesToCloud();
+            alert('Contrato anexado com sucesso!');
+            renderContractsTable();
+        });
+    }).catch(error => {
+        console.error("Erro ao fazer upload do contrato", error);
+        alert('Erro ao anexar contrato. Verifique as permissões do Firebase Storage.');
+        renderContractsTable();
+    });
 }
 
 function renderInternetAnimation() {
@@ -774,6 +888,7 @@ function setupEventListeners() {
     document.getElementById('menu-houses-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('imoveis'); }); 
     document.getElementById('menu-luz-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('luz'); });
     document.getElementById('menu-internet-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('internet'); });
+    if(document.getElementById('menu-contratos-link')) document.getElementById('menu-contratos-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('contratos'); });
     document.getElementById('menu-users-link').addEventListener('click', (e) => { e.preventDefault(); switchSection('users'); });
     document.getElementById('btn-logout').addEventListener('click', logout);
 
