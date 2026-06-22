@@ -778,6 +778,7 @@ function setupEventListeners() {
 
     document.getElementById('btn-whatsapp-confirm').addEventListener('click', handleWhatsAppSend);
     document.getElementById('btn-generate-pdf').addEventListener('click', handleDownloadPDF);
+    if(document.getElementById('btn-generate-pdf-luz')) document.getElementById('btn-generate-pdf-luz').addEventListener('click', handleDownloadPDFLuz);
 
     const calcUpdateEnergy = () => {
         const kwh = parseFloat(document.getElementById('energy-kwh').value) || 0;
@@ -1209,12 +1210,16 @@ function fillPdfTemplate(house, invoice, pixCode, monthStr) {
     document.getElementById('pdf-gen-time').textContent = `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR')}`;
 
     const itemsList = document.getElementById('pdf-items-list');
-    itemsList.innerHTML = `
-        <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">Aluguel Mensal - Ref. ${monthStr}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(invoice.baseValue)}</td>
-        </tr>
-    `;
+    itemsList.innerHTML = '';
+    
+    if (invoice.baseValue > 0 || (!invoice.isEnergyOnly && invoice.baseValue === 0)) {
+        itemsList.innerHTML += `
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px;">Aluguel Mensal - Ref. ${monthStr}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-size: 14px;">${formatCurrency(invoice.baseValue)}</td>
+            </tr>
+        `;
+    }
 
     if (invoice.energy > 0) {
         const baseEnergy = invoice.energy - invoice.energyTax;
@@ -1263,6 +1268,48 @@ function handleDownloadPDF() {
 
     html2pdf().set(opt).from(element).save().then(() => {
         alert('Fatura PDF gerada e baixada!');
+    });
+}
+
+function handleDownloadPDFLuz() {
+    const { house, invoice, monthStr } = window.currentReportData;
+    if (invoice.energy <= 0) {
+        alert('Este imóvel não possui valor de luz lançado neste mês.');
+        return;
+    }
+    
+    // Create custom invoice for energy only
+    const invoiceLuz = {
+        ...invoice,
+        baseValue: 0,
+        penalty: 0,
+        interest: 0,
+        internet: 0,
+        total: invoice.energy,
+        isEnergyOnly: true
+    };
+    
+    const pixCodeLuz = generatePixPayload(invoiceLuz.total);
+    
+    const template = document.getElementById('invoice-pdf-template');
+    fillPdfTemplate(house, invoiceLuz, pixCodeLuz, monthStr);
+
+    const element = template.cloneNode(true);
+    element.style.display = 'block';
+    element.style.position = 'static';
+
+    const opt = {
+        margin:       0,
+        filename:     `Fatura_Luz_${house.number.replace(/\s+/g, '_')}_${monthStr.replace(/\//g, '-')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        alert('Fatura PDF da Luz gerada e baixada!');
+        // Restore template with original data just in case
+        fillPdfTemplate(house, invoice, window.currentReportData.pixCode, monthStr);
     });
 }
 
