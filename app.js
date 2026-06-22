@@ -569,9 +569,21 @@ function renderTable() {
             </div>
         `;
         
-        const addrKey = house.address ? `${house.address}${house.cep ? ' (CEP: '+house.cep+')' : ''}` : 'Endereço Não Informado';
-        if (!groups[addrKey]) groups[addrKey] = [];
-        groups[addrKey].push(card);
+        const baseAddress = house.address ? house.address.trim() : '';
+        const baseCep = house.cep ? house.cep.trim() : '';
+        let displayAddr = baseAddress ? `${baseAddress}${baseCep ? ' (CEP: '+baseCep+')' : ''}` : 'Endereço Não Informado';
+        
+        const normalizeStr = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, ' ');
+        const normalizedDisplayAddr = normalizeStr(displayAddr);
+        
+        let foundKey = Object.keys(groups).find(k => normalizeStr(k) === normalizedDisplayAddr);
+        
+        if (foundKey) {
+            displayAddr = foundKey;
+        }
+        
+        if (!groups[displayAddr]) groups[displayAddr] = [];
+        groups[displayAddr].push(card);
     });
     
     for (const [address, cards] of Object.entries(groups)) {
@@ -664,8 +676,18 @@ function updateAddressDatalist() {
     if (!dataList) return;
     dataList.innerHTML = '';
     
-    // Get unique addresses
-    const uniqueAddresses = [...new Set(houses.map(h => h.address).filter(a => a && a.trim() !== ''))];
+    const normalizeStr = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, ' ');
+    const seen = new Set();
+    const uniqueAddresses = [];
+    
+    houses.forEach(h => {
+        if (!h.address || h.address.trim() === '') return;
+        const norm = normalizeStr(h.address);
+        if (!seen.has(norm)) {
+            seen.add(norm);
+            uniqueAddresses.push(h.address.trim());
+        }
+    });
     
     uniqueAddresses.forEach(address => {
         const option = document.createElement('option');
@@ -818,8 +840,8 @@ function handleHouseSubmit(e) {
         number: document.getElementById('house-number').value,
         tenant: document.getElementById('tenant-name').value,
         phone: document.getElementById('tenant-phone').value,
-        address: document.getElementById('house-address') ? document.getElementById('house-address').value : '',
-        cep: document.getElementById('house-cep') ? document.getElementById('house-cep').value : '',
+        address: document.getElementById('house-address') ? document.getElementById('house-address').value.trim() : '',
+        cep: document.getElementById('house-cep') ? document.getElementById('house-cep').value.trim() : '',
         dueDay: parseInt(document.getElementById('due-day').value),
         startDate: document.getElementById('start-date').value,
         rentValue: parseFloat(document.getElementById('rent-value').value),
