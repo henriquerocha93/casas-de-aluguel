@@ -85,6 +85,44 @@ function saveUsersToCloud() {
     database.ref('hrc_users').set(usersObj);
 }
 let currentMonthFilter = getCurrentMonthStr(); // Formato YYYY-MM
+
+// ==========================
+// ORDENAÇÃO E PRÓXIMO NÚMERO
+// ==========================
+
+// Extrai o número de "Casa 01", "casa 02", etc. Retorna Infinity se não encontrar número.
+function extractHouseNum(numberStr) {
+    if (!numberStr) return Infinity;
+    const match = String(numberStr).match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : Infinity;
+}
+
+// Normaliza string para agrupar endereços
+function normalizeAddr(str) {
+    return (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+// Retorna o menor número vago na sequência para o endereço informado (ex: se tem Casa 01 e Casa 03, retorna "Casa 02")
+function getNextAvailableHouseNumber(address) {
+    const targetAddr = normalizeAddr(address || '');
+    const filteredHouses = targetAddr 
+        ? houses.filter(h => normalizeAddr(h.address || '') === targetAddr)
+        : houses;
+        
+    const usedNumbers = new Set(
+        filteredHouses
+            .map(h => extractHouseNum(h.number))
+            .filter(n => Number.isFinite(n) && n > 0)
+    );
+    
+    let nextNum = 1;
+    while (usedNumbers.has(nextNum)) {
+        nextNum++;
+    }
+    
+    const padded = String(nextNum).padStart(2, '0');
+    return `Casa ${padded}`;
+}
 let chartInstance = null;
 
 // Elementos DOM
@@ -276,7 +314,8 @@ function renderLuzTable() {
     const tbody = document.getElementById('luz-tbody');
     tbody.innerHTML = '';
 
-    houses.forEach(house => {
+    const sortedHouses = [...houses].sort((a, b) => extractHouseNum(a.number) - extractHouseNum(b.number));
+    sortedHouses.forEach(house => {
         const invoice = calculateInvoice(house, filterMonth);
         
         // Tentar buscar kWh se gravado no record de pagamento
@@ -376,7 +415,8 @@ function renderInternetTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    houses.forEach(house => {
+    const sortedHouses = [...houses].sort((a, b) => extractHouseNum(a.number) - extractHouseNum(b.number));
+    sortedHouses.forEach(house => {
         const hasInternet = house.hasInternet || false;
         const internetVal = house.internetValue || 0;
 
@@ -437,7 +477,8 @@ function renderContractsTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    houses.forEach(house => {
+    const sortedHouses = [...houses].sort((a, b) => extractHouseNum(a.number) - extractHouseNum(b.number));
+    sortedHouses.forEach(house => {
         const tr = document.createElement('tr');
         
         // Calculate contract dates
@@ -694,6 +735,7 @@ function renderTable() {
         }
         
         if (!groups[displayAddr]) groups[displayAddr] = [];
+        card.dataset.houseNumber = house.number;
         groups[displayAddr].push(card);
     });
     
@@ -708,6 +750,7 @@ function renderTable() {
         
         const gridInner = document.createElement('div');
         gridInner.className = 'houses-grid-inner';
+        cards.sort((a, b) => extractHouseNum(a.dataset.houseNumber) - extractHouseNum(b.dataset.houseNumber));
         cards.forEach(c => gridInner.appendChild(c));
         
         groupContainer.appendChild(gridInner);
@@ -834,19 +877,32 @@ function setupEventListeners() {
         document.getElementById('house-id').value = '';
         document.getElementById('modal-house-title').textContent = "Cadastrar Imóvel";
         updateAddressDatalist();
+        document.getElementById('house-number').value = getNextAvailableHouseNumber('');
         document.getElementById('modal-house').classList.add('active');
     });
 
-    document.getElementById('house-address').addEventListener('change', (e) => {
+    const onAddressChange = (e) => {
         const address = e.target.value;
-        if (!address) return;
+        const houseId = document.getElementById('house-id').value;
         
-        // Find if any house has this address and a CEP
-        const existingHouse = houses.find(h => h.address === address && h.cep && h.cep.trim() !== '');
+        // Se for novo cadastro, sugere o próximo número vago do endereço
+        if (!houseId) {
+            const numInput = document.getElementById('house-number');
+            if (!numInput.value || /^casa\s*\d*$/i.test(numInput.value.trim())) {
+                numInput.value = getNextAvailableHouseNumber(address);
+            }
+        }
+        
+        if (!address) return;
+        // Preenche o CEP se já existir imóvel com este endereço
+        const existingHouse = houses.find(h => normalizeAddr(h.address) === normalizeAddr(address) && h.cep && h.cep.trim() !== '');
         if (existingHouse) {
             document.getElementById('house-cep').value = existingHouse.cep;
         }
-    });
+    };
+
+    document.getElementById('house-address').addEventListener('change', onAddressChange);
+    document.getElementById('house-address').addEventListener('input', onAddressChange);
 
     document.getElementById('close-modal-house').addEventListener('click', () => {
         document.getElementById('modal-house').classList.remove('active');
@@ -991,6 +1047,9 @@ function handleHouseSubmit(e) {
     } else {
         // New
         houseData.id = Date.now().toString();
+        if (!houseData.number || houseData.number.trim() === '') {
+            houseData.number = getNextAvailableHouseNumber(houseData.address);
+        }
         houses.push(houseData);
     }
 
